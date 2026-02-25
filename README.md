@@ -1,272 +1,92 @@
-# VC Intelligence Platform
+# VC Intelligence
 
-A comprehensive venture capital intelligence platform that leverages AI-powered company enrichment to provide actionable insights for investment analysis.
+VC Intelligence is a Next.js application for browsing, enriching, and organizing startup/company data for investment-style research workflows.
 
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)
-![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?style=flat-square&logo=tailwind-css)
+## Current Stack
+
+- Next.js 16.1.6 (App Router, Turbopack)
+- React 19.2.3
+- TypeScript 5
+- ESLint 9
 
 ## Features
 
-### Company Discovery & Analysis
-- **Advanced Search**: Filter companies by industry, funding stage, and custom search queries
-- **AI-Powered Enrichment**: Real-time website analysis using GPT-4o Mini
-- **Smart Caching**: 24-hour localStorage caching to optimize API costs
-- **Structured Intelligence**: Business activities, keywords, and market signals
+- Company directory with search, filter, and sorting
+- Pagination on the companies page (7 companies per page)
+- Company profile view with re-enrichment simulation and JSON export
+- Save companies to local storage
+- Create and manage custom lists
+- Local API route for enrichment (`POST /api/enrich`)
 
-### Data Management
-- **Custom Lists**: Create and manage curated company lists with full-height sidebar UI
-- **Saved Searches**: Save and reuse complex search filters
-- **Export Functionality**: Export lists in JSON format
-- **Persistent Storage**: All data saves locally in your browser
+## Data Notes
 
-### Professional Dark UI
-- **Dark Theme**: Professional slate-based dark interface optimized for extended use
-- **Navbar-Style Layout**: Full-height sidebar navigation matching modern dashboard patterns
-- **Responsive Design**: Works seamlessly on desktop and mobile
-- **Smooth Animations**: Polished transitions and hover effects
-- **Modal Interfaces**: Dark-themed modals for enrichment and list management
+- The app ships with 20 mock companies in `lib/mockData.ts`
+- Company and list state is persisted in `localStorage` for client-side workflows
 
-## Tech Stack
+## Project Structure
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS 4
-- **AI Integration**: OpenAI GPT-4o Mini
-- **Web Scraping**: Cheerio with ScrapingAPI fallback
-- **Data Storage**: LocalStorage with JSON persistence
+```text
+app/
+  api/enrich/route.ts       API enrichment endpoint
+  companies/page.tsx        Company table, filters, pagination
+  companies/[id]/page.tsx   Company profile page
+  lists/page.tsx            List management UI
+  saved/page.tsx            Saved companies UI
+lib/
+  mockData.ts               Company seed data
+  listManager.ts            List persistence helpers
+  searchManager.ts          Saved company/search helpers
+components/
+  AppLayout.tsx             App layout shell
+```
 
 ## Getting Started
 
-### Prerequisites
-- Node.js 18+ 
-- npm, yarn, or pnpm
+1. Install dependencies:
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Shivprasadpravindongapure/vc-intelligence.git
-   cd vc-intelligence
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   # or
-   pnpm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Add your API keys to `.env.local`:
-   ```env
-   # AI API Keys for Live Enrichment
-   OPENAI_API_KEY=your_openai_api_key_here
-   ANTHROPIC_API_KEY=your_anthropic_api_key_here
-   
-   # Web Scraping API Key
-   SCRAPING_API_KEY=your_scraping_api_key_here
-   ```
-
-4. **Run the development server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   # or
-   pnpm dev
-   ```
-
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-## 🔧 Configuration
-
-### API Keys Setup
-
-#### OpenAI API
-1. Visit [OpenAI Platform](https://platform.openai.com/)
-2. Create an account and generate an API key
-3. Add it to your `.env.local` file
-
-#### Anthropic API
-1. Visit [Anthropic Console](https://console.anthropic.com/)
-2. Create an account and generate an API key
-3. Add it to your `.env.local` file
-
-#### ScrapingAPI
-1. Visit [ScrapingAPI](https://www.scrapingapi.com/)
-2. Sign up and get your API key
-3. Add it to your `.env.local` file
-
-**Note**: The app will work with mock data even without API keys, but live enrichment requires proper API configuration.
-
-## 📖 Usage Guide
-
-### Company Analysis
-
-1. **Browse Companies**: Navigate to the Companies page to see all available companies
-2. **Apply Filters**: Use industry and stage filters to narrow down results
-3. **Enrich Data**: Click "Enrich" on any company to get AI-powered insights
-4. **View Insights**: See structured data including:
-   - Company summary and business model
-   - Relevant keywords and tags
-   - Growth signals and indicators
-   - Source URLs and timestamp
-
-### List Management
-
-1. **Create Lists**: Click "+ New List" in the Lists section
-2. **Add Companies**: Use "Save to List" on company profiles
-3. **Manage Lists**: Export, delete, or modify your lists
-4. **Export Data**: Download lists as JSON for external use
-
-### Saved Searches
-
-1. **Apply Filters**: Set your desired search criteria
-2. **Save Search**: Click "Save Search" to store the filter combination
-3. **Reuse Later**: Access saved searches for quick filtering
-
-## 🏗️ Project Structure
-
-```
-vc-intelligence/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   │   └── enrich/        # AI enrichment endpoint
-│   ├── companies/         # Company-related pages
-│   ├── lists/            # List management pages
-│   ├── saved/            # Saved searches page
-│   ├── globals.css       # Global styles
-│   ├── layout.tsx        # Root layout
-│   └── page.tsx         # Home page
-├── components/           # Reusable React components
-│   ├── Layout.tsx       # Main app layout
-│   └── EnrichmentPanel.tsx # AI enrichment UI
-├── lib/                 # Utility libraries
-│   ├── mockData.ts      # Sample company data
-│   ├── listManager.ts   # List management logic
-│   └── searchManager.ts # Search management logic
-├── public/              # Static assets
-├── .gitignore           # Git ignore file
-└── README.md           # This file
-```
-
-## 🔌 API Endpoints
-
-### POST /api/enrich
-
-Accepts a company URL and returns AI-powered enrichment data.
-
-**Request:**
-```json
-{
-  "url": "https://example.com"
-}
-```
-
-**Response:**
-```json
-{
-  "summary": "Concise company overview",
-  "whatTheyDo": "Detailed business description", 
-  "keywords": ["relevant", "business", "tags"],
-  "signals": ["growth", "indicators", "signals"],
-  "sources": ["source", "URLs"],
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
-```
-
-## 🎯 AI Enrichment Features
-
-### Content Analysis
-- **Business Model**: How the company makes money
-- **Target Market**: Primary customer segments
-- **Technology Stack**: Key technologies and innovations
-- **Competitive Positioning**: Industry standing and differentiation
-- **Growth Indicators**: Signals of traction and scaling
-
-### Fallback Strategy
-1. **OpenAI GPT-3.5-turbo**: Primary analysis engine
-2. **Anthropic Claude**: Secondary analysis option
-3. **Mock Data**: Fallback ensures UI always works
-
-### Smart Caching
-- **24-hour Cache**: Prevents repeated API calls
-- **Local Storage**: Fast, client-side caching
-- **Automatic Refresh**: Stale data automatically refreshed
-
-## 🧪 Testing
-
-### Running Tests
 ```bash
-npm run test
-# or
-yarn test
+npm install
 ```
 
-### Manual Testing Checklist
-- [ ] Company page loads and displays data
-- [ ] Search and filters work correctly
-- [ ] AI enrichment provides results
-- [ ] List creation and management functions
-- [ ] Export functionality works
-- [ ] Responsive design on mobile/tablet
-- [ ] Error handling displays properly
+2. Create `.env.local` in the project root and add any keys you need:
 
-## 📱 Browser Support
+```env
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+SCRAPING_API_KEY=
+NEXT_PUBLIC_CRUNCHBASE_API_KEY=
+```
 
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
+3. Start development server:
 
-## 🚀 Deployment
-
-### Vercel (Recommended)
-1. Connect your GitHub repository to Vercel
-2. Add environment variables in Vercel dashboard
-3. Deploy automatically on push to main branch
-
-### Other Platforms
 ```bash
-# Build for production
+npm run dev
+```
+
+4. Open `http://localhost:3000`
+
+## Scripts
+
+- `npm run dev` - start local dev server
+- `npm run build` - production build
+- `npm run start` - run production server
+- `npm run lint` - run ESLint
+
+## Quality Checks
+
+Recommended before creating a PR:
+
+```bash
+npm run lint
 npm run build
-
-# Start production server
-npm start
 ```
 
-## 🤝 Contributing
+## Pull Request Workflow
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) - React framework
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
-- [OpenAI](https://openai.com/) - AI analysis capabilities
-- [Anthropic](https://anthropic.com/) - AI analysis fallback
-- [ScrapingAPI](https://www.scrapingapi.com/) - Web scraping service
-
-## 📞 Support
-
-For support, please open an issue on GitHub or contact the development team.
-
----
-
-**Built with ❤️ for the venture capital community**
+```bash
+git checkout -b feat/your-change
+git add .
+git commit -m "Describe your change"
+git push -u origin feat/your-change
+# then open a PR on GitHub
+```

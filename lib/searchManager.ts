@@ -7,18 +7,39 @@ export interface SavedSearch {
   createdAt: string;
 }
 
+export interface SavedCompany {
+  id: string;
+  name: string;
+  industry: string;
+  stage: string;
+  description: string;
+  website: string;
+  founded: string;
+  employees: number;
+  headquarters: string;
+  founders: string[];
+  businessModel: string;
+  targetMarket: string;
+  createdAt: string;
+}
+
 export interface SavedSearchesState {
   searches: SavedSearch[];
 }
 
-const STORAGE_KEY = 'vc-intelligence-saved-searches';
+export interface SavedCompaniesState {
+  companies: SavedCompany[];
+}
+
+const SEARCHES_STORAGE_KEY = 'vc-intelligence-saved-searches';
+const COMPANIES_STORAGE_KEY = 'vc-intelligence-saved-companies';
 
 // Get all saved searches from localStorage
 export const getSavedSearches = (): SavedSearch[] => {
   if (typeof window === 'undefined') return [];
   
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(SEARCHES_STORAGE_KEY);
     if (!stored) return [];
     
     const parsed = JSON.parse(stored);
@@ -29,15 +50,43 @@ export const getSavedSearches = (): SavedSearch[] => {
   }
 };
 
+// Get all saved companies from localStorage
+export const getSavedCompanies = (): SavedCompany[] => {
+  if (typeof window === 'undefined') return [];
+  
+  try {
+    const stored = localStorage.getItem(COMPANIES_STORAGE_KEY);
+    if (!stored) return [];
+    
+    const parsed = JSON.parse(stored);
+    return parsed.companies || [];
+  } catch (error) {
+    console.error('Error loading saved companies from localStorage:', error);
+    return [];
+  }
+};
+
 // Save all searches to localStorage
 export const saveSavedSearches = (searches: SavedSearch[]): void => {
   if (typeof window === 'undefined') return;
   
   try {
     const state: SavedSearchesState = { searches };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(SEARCHES_STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
     console.error('Error saving searches to localStorage:', error);
+  }
+};
+
+// Save all companies to localStorage
+export const saveSavedCompanies = (companies: SavedCompany[]): void => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const state: SavedCompaniesState = { companies };
+    localStorage.setItem(COMPANIES_STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.error('Error saving companies to localStorage:', error);
   }
 };
 
@@ -64,6 +113,39 @@ export const createSavedSearch = (
   return newSearch;
 };
 
+// Save a company to saved companies
+export const saveCompany = (company: {
+  id: string;
+  name: string;
+  industry: string;
+  stage: string;
+  description: string;
+  website: string;
+  founded: string;
+  employees: number;
+  headquarters: string;
+  founders: string[];
+  businessModel: string;
+  targetMarket: string;
+}): SavedCompany => {
+  const companies = getSavedCompanies();
+  
+  // Check if company is already saved
+  if (companies.some(c => c.id === company.id)) {
+    throw new Error('Company is already saved');
+  }
+  
+  const newSavedCompany: SavedCompany = {
+    ...company,
+    createdAt: new Date().toISOString()
+  };
+  
+  const updatedCompanies = [...companies, newSavedCompany];
+  saveSavedCompanies(updatedCompanies);
+  
+  return newSavedCompany;
+};
+
 // Delete a saved search
 export const deleteSavedSearch = (searchId: string): boolean => {
   const searches = getSavedSearches();
@@ -73,6 +155,23 @@ export const deleteSavedSearch = (searchId: string): boolean => {
   
   saveSavedSearches(filteredSearches);
   return true;
+};
+
+// Delete a saved company
+export const deleteSavedCompany = (companyId: string): boolean => {
+  const companies = getSavedCompanies();
+  const filteredCompanies = companies.filter(company => company.id !== companyId);
+  
+  if (filteredCompanies.length === companies.length) return false; // No company found to delete
+  
+  saveSavedCompanies(filteredCompanies);
+  return true;
+};
+
+// Check if a company is saved
+export const isCompanySaved = (companyId: string): boolean => {
+  const companies = getSavedCompanies();
+  return companies.some(company => company.id === companyId);
 };
 
 // Apply saved search to URL parameters

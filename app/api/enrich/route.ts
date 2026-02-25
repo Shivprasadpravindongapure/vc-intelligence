@@ -3,11 +3,20 @@ import * as cheerio from 'cheerio';
 
 interface EnrichmentResult {
   summary: string;
-  whatTheyDo: string[]; // Changed to array for bullet points
+  whatTheyDo: string[];
   keywords: string[];
   signals: string[];
-  sources: { url: string; timestamp: string }[]; // Changed to object array with timestamps
-  enrichedAt: string; // Renamed from timestamp
+  sources: { url: string; timestamp: string }[];
+  enrichedAt: string;
+  companyDetails?: {
+    founded?: string;
+    employees?: string;
+    netWorth?: string;
+    founders?: string[];
+    headquarters?: string;
+    revenue?: string;
+    funding?: string;
+  };
   error?: string;
 }
 
@@ -105,29 +114,55 @@ async function analyzeWithOpenAI(content: string, url: string): Promise<Omit<Enr
     throw new Error('OpenAI API key not configured');
   }
 
-  const prompt = `
-Analyze the following website content and extract key information about the company:
+  // Extract company name from URL for better context
+  const domain = new URL(url).hostname.replace('www.', '');
+  const companyName = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
 
+  const prompt = `
+You are a business intelligence analyst specializing in company research and analysis. Analyze the following website content for ${companyName} and extract comprehensive, company-specific information.
+
+Company: ${companyName}
 URL: ${url}
 
 Content:
 ${content}
 
-Please provide a JSON response with the following structure:
+Provide a detailed JSON analysis focusing on THIS SPECIFIC COMPANY. Do not use generic templates. Extract actual information from the content:
+
 {
-  "summary": "A concise 1-2 sentence summary of what this company does",
-  "whatTheyDo": ["Bullet point 1 about their business model", "Bullet point 2 about their products/services", "Bullet point 3 about their target market", "Bullet point 4 about their key technologies", "Bullet point 5 about their competitive advantages"],
-  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6", "keyword7", "keyword8"],
-  "signals": ["signal1", "signal2", "signal3", "signal4"],
-  "sources": [{"url": "source1", "timestamp": "2024-01-01T00:00:00Z"}, {"url": "source2", "timestamp": "2024-01-01T00:00:00Z"}]
+  "summary": "Specific summary of what ${companyName} does based on their website content",
+  "whatTheyDo": [
+    "Specific business model of ${companyName}",
+    "Main products/services offered by ${companyName}",
+    "Target market and customers of ${companyName}",
+    "Key technologies or innovations used by ${companyName}",
+    "Competitive advantages of ${companyName}"
+  ],
+  "keywords": ["specific", "keywords", "related", "to", "${companyName}", "business", "industry", "focus"],
+  "signals": [
+    "Specific market position signal for ${companyName}",
+    "Growth indicator specific to ${companyName}",
+    "Industry trend relevant to ${companyName}",
+    "Business strength of ${companyName}"
+  ],
+  "companyDetails": {
+    "founded": "Actual founding year if found in content, otherwise 'Not specified'",
+    "employees": "Employee count if mentioned, otherwise 'Not disclosed'",
+    "netWorth": "Valuation or financial information if found, otherwise 'Not disclosed'",
+    "founders": ["Actual founder names if found", "Additional founders if mentioned"],
+    "headquarters": "Headquarters location if specified, otherwise 'Not specified'",
+    "revenue": "Revenue information if mentioned, otherwise 'Not disclosed'",
+    "funding": "Funding details if available, otherwise 'Not disclosed'"
+  },
+  "sources": [{"url": "${url}", "timestamp": "2024-01-01T00:00:00Z"}]
 }
 
-Focus on:
-- Business model and value proposition
-- Target market and customers
-- Key technologies or innovations
-- Industry and competitive positioning
-- Growth indicators or signals
+CRITICAL REQUIREMENTS:
+1. Be specific to ${companyName} - do not use generic responses
+2. Only include information actually found in the content
+3. If information is not available, use 'Not specified' or 'Not disclosed'
+4. Focus on accurate, factual information from the website
+5. Provide real insights specific to this company's business
 
 Respond only with valid JSON, no additional text.
 `;
@@ -188,23 +223,55 @@ async function analyzeWithAnthropic(content: string, url: string): Promise<Omit<
     throw new Error('Anthropic API key not configured');
   }
 
-  const prompt = `Analyze the following website content and extract key information about the company:
+  // Extract company name from URL for better context
+  const domain = new URL(url).hostname.replace('www.', '');
+  const companyName = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
 
+  const prompt = `You are a business intelligence analyst specializing in company research and analysis. Analyze the following website content for ${companyName} and extract comprehensive, company-specific information.
+
+Company: ${companyName}
 URL: ${url}
 
 Content:
 ${content}
 
-Please provide a JSON response with the following structure:
+Provide a detailed JSON analysis focusing on THIS SPECIFIC COMPANY. Do not use generic templates. Extract actual information from the content:
+
 {
-  "summary": "A concise 1-2 sentence summary of what this company does",
-  "whatTheyDo": ["Bullet point 1 about their business model", "Bullet point 2 about their products/services", "Bullet point 3 about their target market", "Bullet point 4 about their key technologies", "Bullet point 5 about their competitive advantages"],
-  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6", "keyword7", "keyword8"],
-  "signals": ["signal1", "signal2", "signal3", "signal4"],
-  "sources": [{"url": "source1", "timestamp": "2024-01-01T00:00:00Z"}, {"url": "source2", "timestamp": "2024-01-01T00:00:00Z"}]
+  "summary": "Specific summary of what ${companyName} does based on their website content",
+  "whatTheyDo": [
+    "Specific business model of ${companyName}",
+    "Main products/services offered by ${companyName}",
+    "Target market and customers of ${companyName}",
+    "Key technologies or innovations used by ${companyName}",
+    "Competitive advantages of ${companyName}"
+  ],
+  "keywords": ["specific", "keywords", "related", "to", "${companyName}", "business", "industry", "focus"],
+  "signals": [
+    "Specific market position signal for ${companyName}",
+    "Growth indicator specific to ${companyName}",
+    "Industry trend relevant to ${companyName}",
+    "Business strength of ${companyName}"
+  ],
+  "companyDetails": {
+    "founded": "Actual founding year if found in content, otherwise 'Not specified'",
+    "employees": "Employee count if mentioned, otherwise 'Not disclosed'",
+    "netWorth": "Valuation or financial information if found, otherwise 'Not disclosed'",
+    "founders": ["Actual founder names if found", "Additional founders if mentioned"],
+    "headquarters": "Headquarters location if specified, otherwise 'Not specified'",
+    "revenue": "Revenue information if mentioned, otherwise 'Not disclosed'",
+    "funding": "Funding details if available, otherwise 'Not disclosed'"
+  },
+  "sources": [{"url": "${url}", "timestamp": "2024-01-01T00:00:00Z"}]
 }
 
-Focus on business model, target market, technologies, industry positioning, and growth indicators.
+CRITICAL REQUIREMENTS:
+1. Be specific to ${companyName} - do not use generic responses
+2. Only include information actually found in the content
+3. If information is not available, use 'Not specified' or 'Not disclosed'
+4. Focus on accurate, factual information from the website
+5. Provide real insights specific to this company's business
+
 Respond only with valid JSON, no additional text.`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -256,23 +323,125 @@ Respond only with valid JSON, no additional text.`;
 function getMockEnrichment(url: string, companyName: string): Omit<EnrichmentResult, 'enrichedAt'> {
   const domain = new URL(url).hostname.replace('www.', '');
   
+  // Create more specific mock data based on common company patterns
+  const mockData: Record<string, Omit<EnrichmentResult, 'enrichedAt'>> = {
+    'openai': {
+      summary: 'OpenAI is a late stage AI research company based in San Francisco, CA. Founded in 2017, they have grown to 1000-5000 employees. Artificial intelligence research company developing advanced AI models and technologies.',
+      whatTheyDo: [
+        'Provides AI research solutions for businesses',
+        'Operates a SaaS platform with 1000-5000 employees',
+        'Has raised $13B+ in their latest round',
+        'Focuses on innovation in the AI space',
+        'Develops cutting-edge machine learning technologies'
+      ],
+      keywords: ['artificial intelligence', 'machine learning', 'GPT', 'AI research', 'deep learning', 'neural networks', 'AGI', 'innovation'],
+      signals: [
+        'Late Stage company with strong funding trajectory',
+        'Active in competitive AI market',
+        'Leading technology development in AI space',
+        'Strong growth and market position'
+      ],
+      companyDetails: {
+        founded: '2015',
+        employees: '1000-5000',
+        netWorth: '$80-90 billion valuation',
+        founders: ['Sam Altman', 'Greg Brockman', 'Ilya Sutskever', 'John Schulman', 'Wojciech Zaremba'],
+        headquarters: 'San Francisco, California',
+        revenue: 'Not disclosed',
+        funding: '$13 billion+ in funding'
+      },
+      sources: [{ url, timestamp: new Date().toISOString() }]
+    },
+    'stripe': {
+      summary: 'Stripe is a late stage fintech company based in San Francisco, CA. Founded in 2010, they have grown to 5000+ employees. Financial technology company that provides payment processing and economic infrastructure for internet businesses.',
+      whatTheyDo: [
+        'Provides payment processing solutions for businesses',
+        'Operates a SaaS platform with 5000+ employees',
+        'Has raised $2.2B+ in their latest round',
+        'Focuses on innovation in the fintech space',
+        'Offers developer-friendly payment APIs'
+      ],
+      keywords: ['payments', 'fintech', 'API', 'e-commerce', 'financial services', 'payment processing', 'merchant services', 'banking', 'growth'],
+      signals: [
+        'Late Stage company with strong funding trajectory',
+        'Active in competitive fintech market',
+        'Leading payment processing technology',
+        'Strong market adoption and growth'
+      ],
+      companyDetails: {
+        founded: '2010',
+        employees: '5000+',
+        netWorth: '$50-95 billion valuation',
+        founders: ['Patrick Collison', 'John Collison'],
+        headquarters: 'San Francisco, California & Dublin, Ireland',
+        revenue: '$14+ billion annual revenue',
+        funding: '$2.2+ billion in funding'
+      },
+      sources: [{ url, timestamp: new Date().toISOString() }]
+    },
+    'anduril': {
+      summary: 'Anduril is a late stage defense tech company based in Costa Mesa, CA. Founded in 2017, they have grown to 1000-5000 employees. Defense technology company building autonomous systems.',
+      whatTheyDo: [
+        'Provides defense tech solutions for businesses',
+        'Operates a SaaS platform with 1000-5000 employees',
+        'Has raised $1.5B Series F in their latest round',
+        'Focuses on innovation in the defense tech space',
+        'Builds autonomous military systems'
+      ],
+      keywords: ['defense', 'ai', 'hardware', 'defense tech', 'growth', 'innovation', 'autonomous systems', 'military technology'],
+      signals: [
+        'Late Stage company with strong funding trajectory',
+        'Active in competitive Defense Tech market',
+        'Leading autonomous systems development',
+        'Strong government contracts and partnerships'
+      ],
+      companyDetails: {
+        founded: '2017',
+        employees: '1000-5000',
+        netWorth: '$8-10 billion valuation',
+        founders: ['Palmer Luckey'],
+        headquarters: 'Costa Mesa, California',
+        revenue: 'Not disclosed',
+        funding: '$1.5 billion Series F'
+      },
+      sources: [{ url, timestamp: new Date().toISOString() }]
+    }
+  };
+
+  // Try to match domain to known companies, otherwise use generic
+  const domainKey = domain.split('.')[0].toLowerCase();
+  const specificMock = mockData[domainKey];
+  
+  if (specificMock) {
+    return specificMock;
+  }
+  
+  // Generic fallback
   return {
-    summary: `${companyName} is a technology company operating in the digital space, focused on innovation and growth.`,
+    summary: `${companyName} is a late stage technology company based in the digital space, focused on innovation and growth. Founded in recent years, they have grown to a significant team size.`,
     whatTheyDo: [
-      `${companyName} provides digital solutions and services through their web platform`,
-      `The company focuses on delivering value to customers through technology-driven products`,
-      `Operating in the digital space with emphasis on innovation and growth`,
-      `Leveraging modern technologies to enhance their service offerings`,
-      `Building a strong online presence and customer engagement strategies`
+      `Provides technology solutions for businesses`,
+      `Operates a SaaS platform with growing team`,
+      `Has raised significant funding in recent rounds`,
+      `Focuses on innovation in the technology space`,
+      `Builds cutting-edge digital solutions`
     ],
-    keywords: ['technology', 'innovation', 'digital', 'platform', 'services', 'growth', 'online', 'customer'],
+    keywords: ['technology', 'innovation', 'digital', 'platform', 'services', 'growth', 'saas', 'startup'],
     signals: [
-      'Active web presence with professional website',
-      'Technology-focused business model',
-      'Digital service delivery',
-      'Online customer engagement',
-      'Innovation-driven approach'
+      'Late Stage company with strong funding trajectory',
+      'Active in competitive technology market',
+      'Leading digital innovation',
+      'Strong growth and market position'
     ],
+    companyDetails: {
+      founded: 'Not specified',
+      employees: 'Not disclosed',
+      netWorth: 'Not disclosed',
+      founders: ['Not specified'],
+      headquarters: 'Not specified',
+      revenue: 'Not disclosed',
+      funding: 'Not disclosed'
+    },
     sources: [{ url, timestamp: new Date().toISOString() }]
   };
 }
