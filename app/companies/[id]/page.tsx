@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Layout from '@/components/Layout';
 import { companies, Company } from '@/lib/mockData';
 import { 
   CompanyList, 
@@ -10,231 +9,100 @@ import {
   addCompanyToList,
   createList 
 } from '@/lib/listManager';
-import EnrichmentPanel from '@/components/EnrichmentPanel';
 
-// Extended company interface with additional metadata
-interface ExtendedCompany extends Company {
-  founded?: number;
-  employees?: string;
-  lastFunding?: string;
-  lastFundingAmount?: string;
-  location?: string;
-  tags?: string[];
-}
+type ReEnrichmentData = {
+  employees?: number;
+  founded?: string;
+  headquarters?: string;
+  valuation?: string;
+  funding?: string;
+  businessModel?: string;
+  targetMarket?: string;
+  technologies?: string[];
+  competitors?: string[];
+  market?: string;
+  financials?: Company['financials'];
+};
 
 export default function CompanyProfilePage() {
   const params = useParams();
   const router = useRouter();
   const companyId = params.id as string;
   
-  const [company, setCompany] = useState<ExtendedCompany | null>(null);
-  const [notes, setNotes] = useState('');
+  const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showListModal, setShowListModal] = useState(false);
   const [lists, setLists] = useState<CompanyList[]>([]);
   const [newListName, setNewListName] = useState('');
-  const [showEnrichment, setShowEnrichment] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [isReEnriching, setIsReEnriching] = useState(false);
 
-  // Enhanced company data with metadata for each company
-  const enhancedCompanies: ExtendedCompany[] = [
-    {
-      ...companies[0], // OpenAI
-      founded: 2015,
-      employees: '1000-5000',
-      lastFunding: 'Series C',
-      lastFundingAmount: '$10B',
-      location: 'San Francisco, CA',
-      tags: ['ai', 'research', 'machine learning']
-    },
-    {
-      ...companies[1], // Stripe
-      founded: 2010,
-      employees: '5000+',
-      lastFunding: 'Series I',
-      lastFundingAmount: '$6.5B',
-      location: 'San Francisco, CA',
-      tags: ['fintech', 'payments', 'api']
-    },
-    {
-      ...companies[2], // Airbnb
-      founded: 2008,
-      employees: '5000+',
-      lastFunding: 'Public',
-      lastFundingAmount: '$86B',
-      location: 'San Francisco, CA',
-      tags: ['travel', 'marketplace', 'hospitality']
-    },
-    {
-      ...companies[3], // SpaceX
-      founded: 2002,
-      employees: '5000+',
-      lastFunding: 'Series F',
-      lastFundingAmount: '$100B',
-      location: 'Hawthorne, CA',
-      tags: ['aerospace', 'space', 'transportation']
-    },
-    {
-      ...companies[4], // Discord
-      founded: 2015,
-      employees: '1000-5000',
-      lastFunding: 'Series H',
-      lastFundingAmount: '$15B',
-      location: 'San Francisco, CA',
-      tags: ['social', 'gaming', 'communication']
-    },
-    {
-      ...companies[5], // Notion
-      founded: 2016,
-      employees: '1000-5000',
-      lastFunding: 'Series D',
-      lastFundingAmount: '$10B',
-      location: 'San Francisco, CA',
-      tags: ['productivity', 'collaboration', 'tools']
-    },
-    {
-      ...companies[6], // Figma
-      founded: 2012,
-      employees: '1000-5000',
-      lastFunding: 'Series E',
-      lastFundingAmount: '$10B',
-      location: 'San Francisco, CA',
-      tags: ['design', 'collaboration', 'tools']
-    },
-    {
-      ...companies[7], // Rivian
-      founded: 2009,
-      employees: '5000+',
-      lastFunding: 'Public',
-      lastFundingAmount: '$85B',
-      location: 'Irvine, CA',
-      tags: ['automotive', 'electric', 'ev']
-    },
-    {
-      ...companies[8], // Instacart
-      founded: 2012,
-      employees: '5000+',
-      lastFunding: 'Public',
-      lastFundingAmount: '$39B',
-      location: 'San Francisco, CA',
-      tags: ['grocery', 'delivery', 'logistics']
-    },
-    {
-      ...companies[9], // Databricks
-      founded: 2013,
-      employees: '5000+',
-      lastFunding: 'Series I',
-      lastFundingAmount: '$38B',
-      location: 'San Francisco, CA',
-      tags: ['data', 'analytics', 'machine learning']
-    },
-    {
-      ...companies[10], // Anthropic
-      founded: 2021,
-      employees: '1000-5000',
-      lastFunding: 'Series D',
-      lastFundingAmount: '$4B',
-      location: 'San Francisco, CA',
-      tags: ['ai', 'research', 'safety']
-    },
-    {
-      ...companies[11], // Plaid
-      founded: 2013,
-      employees: '1000-5000',
-      lastFunding: 'Series L',
-      lastFundingAmount: '$2.5B',
-      location: 'San Francisco, CA',
-      tags: ['fintech', 'api', 'banking']
-    },
-    {
-      ...companies[12], // Robinhood
-      founded: 2013,
-      employees: '1000-5000',
-      lastFunding: 'Public',
-      lastFundingAmount: '$20B',
-      location: 'Menlo Park, CA',
-      tags: ['fintech', 'trading', 'investing']
-    },
-    {
-      ...companies[13], // Zoom
-      founded: 2011,
-      employees: '5000+',
-      lastFunding: 'Public',
-      lastFundingAmount: '$18B',
-      location: 'San Jose, CA',
-      tags: ['communication', 'video', 'remote']
-    },
-    {
-      ...companies[14], // Shopify
-      founded: 2006,
-      employees: '5000+',
-      lastFunding: 'Public',
-      lastFundingAmount: '$130B',
-      location: 'Ottawa, Canada',
-      tags: ['ecommerce', 'platform', 'retail']
-    }
-  ];
-
-  // Fetch company data
   useEffect(() => {
-    const foundCompany = enhancedCompanies.find(c => c.id === companyId);
-    if (foundCompany) {
-      setTimeout(() => {
-        setCompany(foundCompany);
-        // Load notes from localStorage
-        const savedNotes = localStorage.getItem(`company-notes-${companyId}`);
-        if (savedNotes) {
-          setNotes(savedNotes);
-        }
-        // Load lists
-        setLists(getLists());
-        setLoading(false);
-      }, 0);
-    } else {
-      // Company not found, redirect to companies page
-      router.push('/companies');
-    }
-  }, [companyId, router]);
+    const foundCompany = companies.find(c => c.id === companyId);
+    setCompany(foundCompany || null);
+    setLists(getLists());
+    setLoading(false);
+  }, [companyId]);
 
-  // Save notes to localStorage
-  const saveNotes = () => {
-    setSaveStatus('saving');
-    localStorage.setItem(`company-notes-${companyId}`, notes);
-    
-    // Show saved status briefly
-    setTimeout(() => {
-      setSaveStatus('saved');
-      setTimeout(() => {
-        setSaveStatus('idle');
-      }, 1500);
-    }, 500);
-  };
-
-  // Handle save to list
-  const handleSaveToList = () => {
-    if (lists.length === 0) {
-      alert('No lists found. Please create a list first.');
-      return;
-    }
-    setShowListModal(true);
-  };
-
-  // Handle adding company to list
-  const handleAddToList = (listId: string) => {
+  // Handle re-enrichment with real-time data
+  const handleReEnrich = async () => {
     if (!company) return;
     
+    setIsReEnriching(true);
     try {
-      addCompanyToList(listId, company.id);
-      setLists(getLists());
-      setShowListModal(false);
-      alert(`Added ${company.name} to list successfully!`);
+      // Simulate real-time data fetching
+      const enrichedData = await fetchRealTimeEnrichment();
+      
+      // Update company with new data
+      setCompany({
+        ...company,
+        employees: enrichedData.employees || company.employees,
+        founded: enrichedData.founded || company.founded,
+        headquarters: enrichedData.headquarters || company.headquarters,
+        valuation: enrichedData.valuation || company.valuation,
+        funding: enrichedData.funding || company.funding,
+        businessModel: enrichedData.businessModel || company.businessModel,
+        targetMarket: enrichedData.targetMarket || company.targetMarket,
+        technologies: enrichedData.technologies || company.technologies,
+        competitors: enrichedData.competitors || company.competitors,
+        market: enrichedData.market || company.market,
+        financials: enrichedData.financials || company.financials
+      });
     } catch (error) {
-      console.error('Error adding to list:', error);
-      alert('Company is already in this list.');
+      console.error('Re-enrichment failed:', error);
+    } finally {
+      setIsReEnriching(false);
     }
   };
 
-  // Handle create new list
+  // Fetch real-time enrichment data
+  const fetchRealTimeEnrichment = async (): Promise<ReEnrichmentData> => {
+    // Simulate API call with real-time data
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          employees: Math.floor(Math.random() * 10000) + 100,
+          founded: (2010 + Math.floor(Math.random() * 14)).toString(),
+          headquarters: ['San Francisco', 'New York', 'London', 'Berlin', 'Tokyo', 'Singapore'][Math.floor(Math.random() * 6)],
+          valuation: '$' + (Math.floor(Math.random() * 10) + 1) + 'B',
+          funding: '$' + (Math.floor(Math.random() * 500) + 50) + 'M',
+          businessModel: ['SaaS', 'Marketplace', 'Platform', 'Direct-to-Consumer', 'B2B'][Math.floor(Math.random() * 5)],
+          targetMarket: ['Enterprise', 'SMB', 'Consumer', 'Developer', 'Healthcare'][Math.floor(Math.random() * 5)],
+          technologies: ['AI', 'Machine Learning', 'Cloud', 'Blockchain', 'IoT', 'AR/VR'].slice(0, Math.floor(Math.random() * 4) + 2),
+          competitors: ['Google', 'Microsoft', 'Amazon', 'Apple', 'Meta'].slice(0, Math.floor(Math.random() * 3) + 1),
+          market: 'Global',
+          financials: {
+            totalFunding: '$' + (Math.floor(Math.random() * 500) + 50) + 'M',
+            lastRound: '$' + (Math.floor(Math.random() * 100) + 10) + 'M',
+            valuation: '$' + (Math.floor(Math.random() * 10) + 1) + 'B',
+            revenue: '$' + (Math.floor(Math.random() * 100) + 10) + 'M',
+            burnRate: '$' + (Math.floor(Math.random() * 10) + 1) + 'M/month'
+          }
+        });
+      }, 2000); // Simulate 2-second API call
+    });
+  };
+
   const handleCreateList = () => {
     if (!newListName.trim() || !company) return;
     
@@ -244,242 +112,294 @@ export default function CompanyProfilePage() {
       setLists(getLists());
       setNewListName('');
       setShowListModal(false);
-      alert(`List "${newListName}" created and company added successfully!`);
     } catch (error) {
       console.error('Error creating list:', error);
-      alert('Failed to create list.');
     }
+  };
+
+  const handleAddToList = (listId: string) => {
+    if (!company) return;
+    
+    try {
+      addCompanyToList(listId, company.id);
+      setLists(getLists());
+    } catch (error) {
+      console.error('Error adding to list:', error);
+    }
+  };
+
+  const handleExport = () => {
+    if (!company) return;
+    
+    const data = {
+      company: company.name,
+      summary: `${company.name} is a ${company.industry} company founded in ${company.founded} that ${company.businessModel.toLowerCase()}.`,
+      employees: company.employees,
+      founded: company.founded,
+      founders: company.founders,
+      businessModel: company.businessModel,
+      whatTheyDo: [
+        `Develops ${company.technologies.slice(0, 2).join(' and ')} solutions`,
+        `Serves ${company.targetMarket.toLowerCase()}`,
+        `Operates in ${company.market} market`,
+        `Currently at ${company.stage} funding stage`,
+        `Headquartered in ${company.headquarters}`,
+        `Competes with ${company.competitors.slice(0, 2).join(' and ')}`
+      ],
+      keywords: [...company.technologies, ...company.competitors, company.industry, company.stage, company.targetMarket],
+      derivedSignals: [
+        'Careers page indicates active hiring',
+        'Recent blog posts show product updates', 
+        'Changelog suggests active development',
+        'Multiple funding rounds completed'
+      ],
+      sources: [
+        `https://www.crunchbase.com/organization/${company.name.toLowerCase()}`,
+        `https://www.linkedin.com/company/${company.name.toLowerCase()}`,
+        company.website
+      ],
+      scrapedAt: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${company.name.toLowerCase().replace(/\s+/g, '_')}_enrichment.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   if (loading) {
     return (
-      <Layout>
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/4 mb-6"></div>
-            <div className="h-32 bg-gray-200 rounded mb-6"></div>
-          </div>
-        </div>
-      </Layout>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
+        <div style={{ color: '#999' }}>Loading...</div>
+      </div>
     );
   }
 
   if (!company) {
     return (
-      <Layout>
-        <div className="max-w-4xl mx-auto text-center py-12">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Company Not Found</h1>
-          <p className="text-gray-600 mb-6">The company you&apos;re looking for doesn&apos;t exist.</p>
-          <button
-            onClick={() => router.push('/companies')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Back to Companies
-          </button>
-        </div>
-      </Layout>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
+        <div style={{ color: '#999' }}>Company not found</div>
+      </div>
     );
   }
 
+  const summary = `${company.name} is a ${company.industry} company founded in ${company.founded} that ${company.businessModel.toLowerCase()}.`;
+
+  const whatTheyDo = [
+    `Develops ${company.technologies.slice(0, 2).join(' and ')} solutions`,
+    `Serves ${company.targetMarket.toLowerCase()}`,
+    `Operates in ${company.market} market`,
+    `Currently at ${company.stage} funding stage`,
+    `Headquartered in ${company.headquarters}`,
+    `Competes with ${company.competitors.slice(0, 2).join(' and ')}`
+  ];
+
+  const keywords = [...company.technologies, ...company.competitors, company.industry, company.stage, company.targetMarket];
+
+  const derivedSignals = [
+    'Careers page indicates active hiring',
+    'Recent blog posts show product updates', 
+    'Changelog suggests active development',
+    'Multiple funding rounds completed'
+  ];
+
+  const sources = [
+    `https://www.crunchbase.com/organization/${company.name.toLowerCase()}`,
+    `https://www.linkedin.com/company/${company.name.toLowerCase()}`,
+    company.website
+  ];
+
   return (
-    <Layout>
-      <div className="max-w-6xl mx-auto">
-        {/* Back Button */}
+    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '20px' }}>
         <button
-          onClick={() => router.push('/companies')}
-          className="mb-6 flex items-center text-blue-600 hover:text-blue-800 font-medium"
+          onClick={() => router.back()}
+          style={{ backgroundColor: '#333', color: 'white', padding: '6px 12px', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer', marginBottom: '10px' }}
         >
-          ← Back to Companies
+          Back
         </button>
 
-        {/* Company Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{company.name}</h1>
-              <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                <a
-                  href={company.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  {company.website.replace('https://', '').replace('http://', '')}
-                </a>
-                <span>•</span>
-                <span>{company.location}</span>
-              </div>
-              <div className="flex items-center gap-4 text-sm mb-4">
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                  {company.industry}
-                </span>
-                <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">
-                  {company.location}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  company.stage === 'Series C' || company.stage === 'Series B' ? 'bg-green-100 text-green-800' :
-                  company.stage === 'Series A' ? 'bg-yellow-100 text-yellow-800' :
-                  company.stage === 'Seed' ? 'bg-orange-100 text-orange-800' :
-                  company.stage === 'Public' ? 'bg-purple-100 text-purple-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {company.stage}
-                </span>
-              </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={handleReEnrich}
+            disabled={isReEnriching}
+            style={{ backgroundColor: isReEnriching ? '#555' : '#333', color: 'white', padding: '6px 12px', border: '1px solid #444', borderRadius: '4px', cursor: isReEnriching ? 'not-allowed' : 'pointer' }}
+          >
+            {isReEnriching ? 'Re-Enriching...' : 'Re-Enrich'}
+          </button>
+          <button
+            onClick={handleExport}
+            style={{ backgroundColor: '#333', color: 'white', padding: '6px 12px', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Export
+          </button>
+          <button
+            onClick={() => setShowListModal(true)}
+            style={{ backgroundColor: '#333', color: 'white', padding: '6px 12px', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Add to List
+          </button>
+        </div>
+      </div>
+
+      <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>{company.name}</h1>
+        <p style={{ color: '#ccc', marginBottom: '15px', fontSize: '14px', lineHeight: 1.5 }}>{summary}</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+          <div>
+            <div style={{ color: '#999', marginBottom: '3px' }}>Employees</div>
+            <div style={{ color: 'white', fontWeight: 'bold' }}>{company.employees.toLocaleString()}</div>
+          </div>
+          <div>
+            <div style={{ color: '#999', marginBottom: '3px' }}>Founded</div>
+            <div style={{ color: 'white', fontWeight: 'bold' }}>{company.founded}</div>
+          </div>
+          <div>
+            <div style={{ color: '#999', marginBottom: '3px' }}>Stage</div>
+            <div style={{ color: 'white', fontWeight: 'bold' }}>{company.stage}</div>
+          </div>
+          <div>
+            <div style={{ color: '#999', marginBottom: '3px' }}>Valuation</div>
+            <div style={{ color: 'white', fontWeight: 'bold' }}>{company.valuation}</div>
+          </div>
+          <div>
+            <div style={{ color: '#999', marginBottom: '3px' }}>Founders</div>
+            <div style={{ color: 'white', fontWeight: 'bold' }}>{company.founders.join(', ')}</div>
+          </div>
+          <div>
+            <div style={{ color: '#999', marginBottom: '3px' }}>Business Model</div>
+            <div style={{ color: 'white', fontWeight: 'bold' }}>{company.businessModel}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* What They Do */}
+      <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>What They Do</h2>
+        <ul style={{ listStyle: 'none', padding: '0', margin: '0', color: '#ccc', fontSize: '14px' }}>
+          {whatTheyDo.map((item, index) => (
+            <li key={index} style={{ marginBottom: '5px', display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
+              <span style={{ color: '#666', marginTop: '2px' }}>•</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Keywords */}
+      <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Keywords</h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+          {keywords.map((keyword, index) => (
+            <span key={index} style={{ backgroundColor: '#222', color: '#ccc', padding: '2px 6px', borderRadius: '3px', fontSize: '12px' }}>
+              {keyword}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Derived Signals */}
+      <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Derived Signals</h2>
+        <ul style={{ listStyle: 'none', padding: '0', margin: '0', color: '#ccc', fontSize: '14px' }}>
+          {derivedSignals.map((signal, index) => (
+            <li key={index} style={{ marginBottom: '5px', display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
+              <span style={{ color: '#666', marginTop: '2px' }}>•</span>
+              <span>{signal}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Sources */}
+      <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Sources</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '14px' }}>
+          {sources.map((source, index) => (
+            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ width: '12px', height: '12px', backgroundColor: '#222', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}></div>
+              <a 
+                href={source} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: '#ccc', textDecoration: 'underline' }}
+              >
+                {source}
+              </a>
+            </div>
+          ))}
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
+            Scraped at: {new Date().toLocaleString()}
+          </div>
+        </div>
+      </div>
+
+      {/* Notes Section */}
+      <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Notes</h2>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add your notes about this company..."
+          style={{ width: '100%', padding: '8px', backgroundColor: '#222', border: '1px solid #444', borderRadius: '4px', color: 'white', resize: 'none', minHeight: '60px' }}
+        />
+      </div>
+
+      {/* Add to List Modal */}
+      {showListModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '20px', width: '100%', maxWidth: '350px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white' }}>Add to List</h3>
+              <button
+                onClick={() => setShowListModal(false)}
+                style={{ color: '#999', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}
+              >
+                ×
+              </button>
             </div>
             
-            {/* Action Button */}
-            <div className="flex gap-3">
+            <div style={{ marginBottom: '15px' }}>
+              <input
+                type="text"
+                placeholder="Create new list..."
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                style={{ width: '100%', padding: '8px', backgroundColor: '#222', border: '1px solid #444', borderRadius: '4px', color: 'white', marginBottom: '10px' }}
+              />
               <button
-                onClick={handleSaveToList}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 font-medium"
+                onClick={handleCreateList}
+                disabled={!newListName.trim()}
+                style={{ width: '100%', backgroundColor: '#333', color: 'white', padding: '8px 16px', border: '1px solid #444', borderRadius: '4px', cursor: newListName.trim() ? 'pointer' : 'not-allowed' }}
               >
-                Save to List
-              </button>
-              <button
-                onClick={() => setShowEnrichment(!showEnrichment)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
-              >
-                {showEnrichment ? 'Hide AI' : 'Enrich with AI'}
+                Create New List
               </button>
             </div>
-          </div>
-
-          {/* Company Details Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-1">Founded</h4>
-              <p className="text-gray-900">{company.founded}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-1">Employees</h4>
-              <p className="text-gray-900">{company.employees}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-1">Last Funding</h4>
-              <p className="text-gray-900">{company.lastFundingAmount} {company.lastFunding}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-1">Stage</h4>
-              <p className="text-gray-900">{company.stage}</p>
-            </div>
-          </div>
-
-          {/* Tags */}
-          {company.tags && company.tags.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-500 mb-2">Tags</h4>
-              <div className="flex flex-wrap gap-2">
-                {company.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium"
+            
+            <div style={{ borderTop: '1px solid #333', paddingTop: '15px' }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>Add to existing:</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '120px', overflowY: 'auto' }}>
+                {lists.map((list) => (
+                  <button
+                    key={list.id}
+                    onClick={() => handleAddToList(list.id)}
+                    style={{ width: '100%', textAlign: 'left', padding: '8px', backgroundColor: '#222', color: 'white', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
                   >
-                    {tag}
-                  </span>
+                    {list.name}
+                  </button>
                 ))}
               </div>
             </div>
-          )}
-
-          {/* Description */}
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Description</h4>
-            <p className="text-gray-700 leading-relaxed">{company.description}</p>
           </div>
         </div>
-
-        {/* AI Enrichment Section */}
-        {showEnrichment && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <EnrichmentPanel
-              companyUrl={company.website} 
-            />
-          </div>
-        )}
-
-        {/* Notes Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Notes</h2>
-            <button
-              onClick={saveNotes}
-              disabled={saveStatus === 'saving'}
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                saveStatus === 'saving' 
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : saveStatus === 'saved'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {saveStatus === 'saving' ? 'Saving...' : 
-               saveStatus === 'saved' ? 'Saved!' : 
-               'Save Notes'}
-            </button>
-          </div>
-          
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add a note..."
-            className="w-full h-32 px-4 py-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          
-          <div className="mt-2 text-sm text-gray-500">
-            {notes.trim() ? 'Notes are automatically saved locally in your browser.' : 'No notes yet. Add one above.'}
-          </div>
-        </div>
-
-        {/* List Selection Modal */}
-        {showListModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Save to List</h3>
-              <p className="text-gray-600 mb-4">Choose a list to add &quot;{company?.name}&quot; to:</p>
-              
-              {lists.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-gray-500 mb-4">No lists found. Create a list first.</p>
-                  <button
-                    onClick={() => {
-                      setShowListModal(false);
-                      router.push('/lists');
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Create List
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {lists.map((list) => (
-                    <button
-                      key={list.id}
-                      onClick={() => handleAddToList(list.id)}
-                      className="w-full text-left p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="font-medium text-gray-900">{list.name}</div>
-                      <div className="text-sm text-gray-500">{list.companies.length} companies</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-              
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => setShowListModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </Layout>
+      )}
+    </div>
   );
 }
