@@ -31,6 +31,8 @@ function CompaniesPageContent() {
   const [lists, setLists] = useState<CompanyList[]>([]);
   const [showListModal, setShowListModal] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [selectedCompanies, setSelectedCompanies] = useState<Set<string>>(new Set());
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
 
   // Load URL parameters on mount
   useEffect(() => {
@@ -77,6 +79,58 @@ function CompaniesPageContent() {
   const totalPages = Math.ceil(filteredAndSortedCompanies.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedCompanies = filteredAndSortedCompanies.slice(startIndex, startIndex + itemsPerPage);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger shortcuts when not typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      
+      // Ctrl/Cmd + K: Focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('main-search')?.focus();
+      }
+      
+      // Ctrl/Cmd + E: Export data
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        handleExportData();
+      }
+      
+      // Ctrl/Cmd + A: Select all visible companies
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        const visibleIds = new Set(paginatedCompanies.map(c => c.id));
+        setSelectedCompanies(visibleIds);
+      }
+      
+      // Escape: Clear selections and close modals
+      if (e.key === 'Escape') {
+        setSelectedCompanies(new Set());
+        setShowEnrichmentModal(false);
+        setShowSaveSearchModal(false);
+        setShowListModal(false);
+      }
+      
+      // ?: Show keyboard shortcuts
+      if (e.key === '?' && !e.shiftKey) {
+        e.preventDefault();
+        setShowKeyboardShortcuts(!showKeyboardShortcuts);
+      }
+      
+      // Arrow keys for pagination
+      if (e.key === 'ArrowLeft' && currentPage > 1) {
+        setCurrentPage(prev => Math.max(1, prev - 1));
+      }
+      if (e.key === 'ArrowRight' && currentPage < totalPages) {
+        setCurrentPage(prev => Math.min(totalPages, prev + 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentPage, totalPages, paginatedCompanies, showKeyboardShortcuts]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -183,6 +237,78 @@ function CompaniesPageContent() {
     }
   };
 
+  // Handle export data
+  const handleExportData = () => {
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      filters: {
+        searchQuery,
+        selectedIndustry,
+        selectedStage
+      },
+      totalCompanies: filteredAndSortedCompanies.length,
+      companies: filteredAndSortedCompanies.map(company => ({
+        id: company.id,
+        name: company.name,
+        description: company.description,
+        industry: company.industry,
+        stage: company.stage,
+        website: company.website
+      }))
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    const fileName = searchQuery || 'all-companies';
+    link.download = `${fileName.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Handle bulk export
+  const handleBulkExport = () => {
+    const selectedCompaniesData = filteredAndSortedCompanies.filter(company => 
+      selectedCompanies.has(company.id)
+    );
+    
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      type: 'bulk_export',
+      filters: {
+        searchQuery,
+        selectedIndustry,
+        selectedStage
+      },
+      totalCompanies: selectedCompaniesData.length,
+      companies: selectedCompaniesData.map(company => ({
+        id: company.id,
+        name: company.name,
+        description: company.description,
+        industry: company.industry,
+        stage: company.stage,
+        website: company.website
+      }))
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `bulk-export-${selectedCompanies.size}-companies-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
@@ -202,32 +328,38 @@ function CompaniesPageContent() {
 
         {/* Premium Search and Filters */}
         <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Enhanced Search */}
-            <div className="md:col-span-2">
-              <label htmlFor="search" className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wide">
-                Search Companies
-              </label>
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <input
-                  id="search"
-                  type="text"
-                  placeholder=""
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
+          {/* Full-width Search Bar */}
+          <div className="mb-6">
+            <div className="relative group">
+              <input
+                id="main-search"
+                type="text"
+                placeholder="Search companies, sectors, tags..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-4 pr-12 py-4 bg-slate-700/50 border border-slate-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-slate-400 transition-all duration-200 text-lg"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-10 pr-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-slate-400 transition-all duration-200"
-                />
-              </div>
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-slate-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
+          </div>
 
+          {/* Additional Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Enhanced Industry Filter */}
             <div>
               <label htmlFor="industry" className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wide">
@@ -316,15 +448,66 @@ function CompaniesPageContent() {
 
         {/* Enhanced Results Count */}
         <div className="mb-6 flex items-center justify-between">
-          <div className="text-sm text-slate-400 font-medium">
-            Showing <span className="text-white font-bold">{paginatedCompanies.length}</span> of <span className="text-white font-bold">{filteredAndSortedCompanies.length}</span> companies
-          </div>
-          {filteredAndSortedCompanies.length > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-sm text-slate-400">Live data</span>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-slate-400 font-medium">
+              Showing <span className="text-white font-bold">{paginatedCompanies.length}</span> of <span className="text-white font-bold">{filteredAndSortedCompanies.length}</span> companies
             </div>
-          )}
+            {selectedCompanies.size > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-lg">
+                <span className="text-sm text-blue-300 font-medium">
+                  {selectedCompanies.size} selected
+                </span>
+                <button
+                  onClick={handleBulkExport}
+                  className="text-blue-400 hover:text-blue-300 transition-colors mr-2"
+                  title="Export selected"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setSelectedCompanies(new Set())}
+                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                  title="Clear selection"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-4">
+            {filteredAndSortedCompanies.length > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                <span className="text-sm text-slate-400">Live data</span>
+              </div>
+            )}
+            {filteredAndSortedCompanies.length > 0 && (
+              <button
+                onClick={handleExportData}
+                className="px-4 py-2 bg-emerald-600/50 text-emerald-300 rounded-lg font-medium hover:bg-emerald-600/70 transition-all duration-200 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export Data
+              </button>
+            )}
+            <button
+              onClick={() => setShowKeyboardShortcuts(!showKeyboardShortcuts)}
+              className="px-3 py-2 bg-slate-600/50 text-slate-300 rounded-lg font-medium hover:bg-slate-500/50 transition-all duration-200 text-sm"
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Press ?
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Enhanced Companies Table */}
@@ -343,6 +526,21 @@ function CompaniesPageContent() {
             <table className="w-full">
               <thead className="bg-slate-900/30 border-b border-slate-700/50">
                 <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={selectedCompanies.size === paginatedCompanies.length && paginatedCompanies.length > 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const visibleIds = new Set(paginatedCompanies.map(c => c.id));
+                          setSelectedCompanies(visibleIds);
+                        } else {
+                          setSelectedCompanies(new Set());
+                        }
+                      }}
+                      className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                     #
                   </th>
@@ -402,7 +600,23 @@ function CompaniesPageContent() {
               <tbody className="bg-slate-800/20 divide-y divide-slate-700/30">
                 {paginatedCompanies.length > 0 ? (
                   paginatedCompanies.map((company, index) => (
-                    <tr key={company.id} className="hover:bg-slate-700/30 transition-all duration-300 group">
+                    <tr key={company.id} className={`hover:bg-slate-700/30 transition-all duration-300 group ${selectedCompanies.has(company.id) ? 'bg-blue-900/10' : ''}`}>
+                      <td className="px-6 py-6">
+                        <input
+                          type="checkbox"
+                          checked={selectedCompanies.has(company.id)}
+                          onChange={(e) => {
+                            const newSelected = new Set(selectedCompanies);
+                            if (e.target.checked) {
+                              newSelected.add(company.id);
+                            } else {
+                              newSelected.delete(company.id);
+                            }
+                            setSelectedCompanies(newSelected);
+                          }}
+                          className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                      </td>
                       <td className="px-6 py-6">
                         <div className="flex items-center justify-center">
                           <span className="text-lg font-bold text-slate-400 group-hover:text-white transition-colors">
@@ -467,7 +681,7 @@ function CompaniesPageContent() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-12 py-20 text-center">
+                    <td colSpan={6} className="px-12 py-20 text-center">
                       <div className="flex flex-col items-center">
                         <div className="w-20 h-20 bg-slate-700/50 rounded-full flex items-center justify-center mb-8">
                           <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -734,6 +948,62 @@ function CompaniesPageContent() {
                 >
                   Cancel
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Keyboard Shortcuts Modal */}
+        {showKeyboardShortcuts && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-slate-700/50 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Keyboard Shortcuts</h3>
+                <button
+                  onClick={() => setShowKeyboardShortcuts(false)}
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all duration-200"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                  <span className="text-slate-300">Focus search</span>
+                  <kbd className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-sm font-mono">Ctrl/Cmd + K</kbd>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                  <span className="text-slate-300">Export data</span>
+                  <kbd className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-sm font-mono">Ctrl/Cmd + E</kbd>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                  <span className="text-slate-300">Select all visible</span>
+                  <kbd className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-sm font-mono">Ctrl/Cmd + A</kbd>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                  <span className="text-slate-300">Previous page</span>
+                  <kbd className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-sm font-mono">←</kbd>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                  <span className="text-slate-300">Next page</span>
+                  <kbd className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-sm font-mono">→</kbd>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                  <span className="text-slate-300">Clear selections & close modals</span>
+                  <kbd className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-sm font-mono">Esc</kbd>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                  <span className="text-slate-300">Show shortcuts</span>
+                  <kbd className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-sm font-mono">?</kbd>
+                </div>
+              </div>
+              
+              <div className="mt-6 p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg">
+                <p className="text-blue-300 text-sm">
+                  💡 <strong>Pro tip:</strong> These shortcuts work anywhere on the page except when typing in input fields.
+                </p>
               </div>
             </div>
           </div>

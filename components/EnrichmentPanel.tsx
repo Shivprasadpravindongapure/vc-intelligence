@@ -106,6 +106,33 @@ export default function EnrichmentPanel({ companyUrl, onAddToList }: EnrichmentP
     return new Date(timestamp).toLocaleString();
   };
 
+  const handleExportData = () => {
+    if (!enrichment) return;
+    
+    const exportData = {
+      companyUrl,
+      enrichedAt: enrichment.enrichedAt,
+      summary: enrichment.summary,
+      whatTheyDo: enrichment.whatTheyDo,
+      keywords: enrichment.keywords,
+      signals: enrichment.signals,
+      sources: enrichment.sources,
+      exportedAt: new Date().toISOString()
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `company-enrichment-${companyUrl.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden">
       {/* Header */}
@@ -180,6 +207,19 @@ export default function EnrichmentPanel({ companyUrl, onAddToList }: EnrichmentP
               </div>
             )}
           </button>
+          {enrichment && (
+            <button
+              onClick={handleExportData}
+              className="px-6 py-3 bg-emerald-600/50 text-emerald-300 rounded-lg font-medium hover:bg-emerald-600/70 transition-all duration-200"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export</span>
+              </div>
+            </button>
+          )}
           {onAddToList && (
             <button
               onClick={onAddToList}
