@@ -72,14 +72,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 group
                       ${isActive 
                         ? 'bg-gradient-to-r ' + item.color + ' text-white shadow-lg' 
-                        : 'text-slate-600 hover:text-white hover:bg-slate-700/50'
+                        : 'text-white hover:text-white hover:bg-slate-700/50'
                       }
                     `}
                   >
                     <span className="text-xl group-hover:scale-110 transition-transform">{item.icon}</span>
                     <div className="flex-1">
-                      <div className="font-semibold text-sm">{item.name}</div>
-                      <div className="text-xs opacity-75">{item.description}</div>
+                      <div className="font-semibold text-sm text-white">{item.name}</div>
+                      <div className="text-xs text-slate-300">{item.description}</div>
                     </div>
                     {isActive && (
                       <div className="w-2 h-2 bg-white rounded-full animate-pulse" />

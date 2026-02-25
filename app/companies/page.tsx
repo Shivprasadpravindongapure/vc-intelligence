@@ -217,7 +217,7 @@ function CompaniesPageContent() {
                 <input
                   id="search"
                   type="text"
-                  placeholder="Search by company name..."
+                  placeholder=""
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -601,24 +601,24 @@ function CompaniesPageContent() {
 
         {/* Enrichment Modal */}
         {showEnrichmentModal && selectedCompany && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-slate-700/50 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
               {/* Modal Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedCompany.name}</h2>
-                    <p className="text-gray-600 mt-1">{selectedCompany.description}</p>
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+              <div className="sticky top-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 p-6 z-10">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-white mb-2">{selectedCompany.name}</h2>
+                    <p className="text-slate-400 text-sm leading-relaxed">{selectedCompany.description}</p>
+                    <div className="flex items-center gap-3 mt-3">
+                      <span className="px-3 py-1 bg-blue-900/40 text-blue-300 border border-blue-700/50 rounded-full text-xs font-medium">
                         {selectedCompany.industry}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        selectedCompany.stage === 'Series C' ? 'bg-green-100 text-green-800' :
-                        selectedCompany.stage === 'Series B' ? 'bg-green-100 text-green-800' :
-                        selectedCompany.stage === 'Series A' ? 'bg-yellow-100 text-yellow-800' :
-                        selectedCompany.stage === 'Seed' ? 'bg-orange-100 text-orange-800' :
-                        'bg-gray-100 text-gray-800'
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                        selectedCompany.stage === 'Series C' || selectedCompany.stage === 'Series B' ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50' :
+                        selectedCompany.stage === 'Series A' ? 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' :
+                        selectedCompany.stage === 'Seed' ? 'bg-orange-900/40 text-orange-300 border-orange-700/50' :
+                        selectedCompany.stage === 'Public' ? 'bg-purple-900/40 text-purple-300 border-purple-700/50' :
+                        'bg-slate-700/50 text-slate-300 border-slate-600/50'
                       }`}>
                         {selectedCompany.stage}
                       </span>
@@ -626,7 +626,7 @@ function CompaniesPageContent() {
                   </div>
                   <button
                     onClick={handleCloseEnrichmentModal}
-                    className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50"
+                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all duration-200 ml-4"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -644,13 +644,13 @@ function CompaniesPageContent() {
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t border-slate-700/50 p-6 bg-slate-800/50">
+              <div className="border-t border-slate-700/50 p-6 bg-slate-800/30">
                 <div className="flex items-center justify-between">
                   <a
                     href={selectedCompany.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-500 transition-all duration-200"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200 hover:scale-105 font-medium"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -659,7 +659,7 @@ function CompaniesPageContent() {
                   </a>
                   <button
                     onClick={handleCloseEnrichmentModal}
-                    className="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-md hover:bg-slate-600/50 transition-all duration-200"
+                    className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-all duration-200 font-medium"
                   >
                     Close
                   </button>
@@ -671,15 +671,15 @@ function CompaniesPageContent() {
 
         {/* List Selection Modal */}
         {showListModal && selectedCompany && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-slate-700/50 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+              <h3 className="text-xl font-bold text-white mb-6">
                 Add {selectedCompany.name} to List
               </h3>
               
               {/* Create New List */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-slate-300 mb-2 uppercase tracking-wide">
                   Create New List
                 </label>
                 <div className="flex gap-2">
@@ -689,12 +689,12 @@ function CompaniesPageContent() {
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleCreateList()}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-slate-400"
                   />
                   <button
                     onClick={handleCreateList}
                     disabled={!newListName.trim()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-all duration-200"
                   >
                     Create
                   </button>
@@ -702,22 +702,22 @@ function CompaniesPageContent() {
               </div>
 
               {/* Or Add to Existing List */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-slate-300 mb-2 uppercase tracking-wide">
                   Or Add to Existing List
                 </label>
                 {lists.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No lists created yet</p>
+                  <p className="text-slate-500 text-sm">No lists created yet</p>
                 ) : (
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {lists.map((list) => (
                       <button
                         key={list.id}
                         onClick={() => handleAddToExistingList(list.id)}
-                        className="w-full text-left p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                        className="w-full text-left p-3 bg-slate-700/30 border border-slate-600/30 rounded-lg hover:bg-slate-700/50 hover:border-slate-500/50 transition-all duration-200"
                       >
-                        <div className="font-medium text-gray-900">{list.name}</div>
-                        <div className="text-sm text-gray-500">{list.companies.length} companies</div>
+                        <div className="font-medium text-white">{list.name}</div>
+                        <div className="text-sm text-slate-400">{list.companies.length} companies</div>
                       </button>
                     ))}
                   </div>
@@ -730,7 +730,7 @@ function CompaniesPageContent() {
                     setShowListModal(false);
                     setNewListName('');
                   }}
-                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 font-medium transition-all duration-200"
                 >
                   Cancel
                 </button>
