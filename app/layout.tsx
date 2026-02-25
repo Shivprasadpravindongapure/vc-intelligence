@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Precision Scout",
+  title: "VC Intelligence",
   description: "VC Intelligence Platform for Company Analysis",
 };
 
