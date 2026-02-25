@@ -1,38 +1,42 @@
-# 🚀 VC Intelligence Platform
+# VC Intelligence Platform
 
 A comprehensive venture capital intelligence platform that leverages AI-powered company enrichment to provide actionable insights for investment analysis.
 
-## ✨ Features
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)
+![React](https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?style=flat-square&logo=tailwind-css)
 
-### 🔍 Company Discovery & Analysis
+## Features
+
+### Company Discovery & Analysis
 - **Advanced Search**: Filter companies by industry, funding stage, and custom search queries
-- **AI-Powered Enrichment**: Real-time website analysis with structured business intelligence
+- **AI-Powered Enrichment**: Real-time website analysis using GPT-4o Mini
 - **Smart Caching**: 24-hour localStorage caching to optimize API costs
-- **Multi-AI Support**: OpenAI primary, Anthropic secondary, with mock data fallback
+- **Structured Intelligence**: Business activities, keywords, and market signals
 
-### 📊 Data Management
-- **Custom Lists**: Create and manage curated company lists
+### Data Management
+- **Custom Lists**: Create and manage curated company lists with full-height sidebar UI
 - **Saved Searches**: Save and reuse complex search filters
-- **Export Functionality**: Export lists and data in JSON format
-- **Local Storage**: All data persists locally in your browser
+- **Export Functionality**: Export lists in JSON format
+- **Persistent Storage**: All data saves locally in your browser
 
-### 🎨 Professional UI
-- **Responsive Design**: Optimized for desktop, tablet, and mobile
-- **Modern Interface**: Clean, intuitive design with Tailwind CSS
-- **Loading States**: Professional loading animations and error handling
-- **Dark Mode Support**: Automatic theme detection
-- **Premium Design System**: Sophisticated code-like aesthetic with proper spacing and typography
+### Professional Dark UI
+- **Dark Theme**: Professional slate-based dark interface optimized for extended use
+- **Navbar-Style Layout**: Full-height sidebar navigation matching modern dashboard patterns
+- **Responsive Design**: Works seamlessly on desktop and mobile
+- **Smooth Animations**: Polished transitions and hover effects
+- **Modal Interfaces**: Dark-themed modals for enrichment and list management
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-- **Frontend**: Next.js 16, React 19, TypeScript
+- **Frontend**: Next.js 15, React 19, TypeScript
 - **Styling**: Tailwind CSS 4
-- **AI Integration**: OpenAI GPT-3.5-turbo, Anthropic Claude
+- **AI Integration**: OpenAI GPT-4o Mini
 - **Web Scraping**: Cheerio with ScrapingAPI fallback
 - **Data Storage**: LocalStorage with JSON persistence
-- **Icons**: Lucide React
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js 18+ 
