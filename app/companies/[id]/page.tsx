@@ -35,14 +35,26 @@ export default function CompanyProfilePage() {
   const [lists, setLists] = useState<CompanyList[]>([]);
   const [newListName, setNewListName] = useState('');
   const [notes, setNotes] = useState('');
+  const [noteStatus, setNoteStatus] = useState('');
   const [isReEnriching, setIsReEnriching] = useState(false);
+  const notesStorageKey = `vc-notes-${companyId}`;
 
   useEffect(() => {
     const foundCompany = companies.find(c => c.id === companyId);
     setCompany(foundCompany || null);
     setLists(getLists());
+    if (typeof window !== 'undefined') {
+      setNotes(localStorage.getItem(notesStorageKey) || '');
+      setNoteStatus('');
+    }
     setLoading(false);
-  }, [companyId]);
+  }, [companyId, notesStorageKey]);
+
+  const handleSaveNotes = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(notesStorageKey, notes);
+    setNoteStatus('Notes saved');
+  };
 
   // Handle re-enrichment with real-time data
   const handleReEnrich = async () => {
@@ -346,10 +358,22 @@ export default function CompanyProfilePage() {
         <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Notes</h2>
         <textarea
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e) => {
+            setNotes(e.target.value);
+            setNoteStatus('');
+          }}
           placeholder="Add your notes about this company..."
           style={{ width: '100%', padding: '8px', backgroundColor: '#222', border: '1px solid #444', borderRadius: '4px', color: 'white', resize: 'none', minHeight: '60px' }}
         />
+        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={handleSaveNotes}
+            style={{ padding: '8px 12px', backgroundColor: '#333', color: 'white', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Save Notes
+          </button>
+          {noteStatus && <span style={{ color: '#999', fontSize: '12px' }}>{noteStatus}</span>}
+        </div>
       </div>
 
       {/* Add to List Modal */}
