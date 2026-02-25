@@ -21,6 +21,7 @@ A comprehensive venture capital intelligence platform that leverages AI-powered 
 - **Modern Interface**: Clean, intuitive design with Tailwind CSS
 - **Loading States**: Professional loading animations and error handling
 - **Dark Mode Support**: Automatic theme detection
+- **Premium Design System**: Sophisticated code-like aesthetic with proper spacing and typography
 
 ## 🛠️ Tech Stack
 
@@ -108,7 +109,7 @@ A comprehensive venture capital intelligence platform that leverages AI-powered 
 
 1. **Browse Companies**: Navigate to the Companies page to see all available companies
 2. **Apply Filters**: Use industry and stage filters to narrow down results
-3. **Enrich Data**: Click "Analyze" on any company to get AI-powered insights
+3. **Enrich Data**: Click "Enrich" on any company to get AI-powered insights
 4. **View Insights**: See structured data including:
    - Company summary and business model
    - Relevant keywords and tags
@@ -149,6 +150,7 @@ vc-intelligence/
 │   ├── listManager.ts   # List management logic
 │   └── searchManager.ts # Search management logic
 ├── public/              # Static assets
+├── .gitignore           # Git ignore file
 └── README.md           # This file
 ```
 

@@ -187,30 +187,30 @@ function CompaniesPageContent() {
     <Layout>
       <div className="max-w-7xl mx-auto">
         {/* Premium Header */}
-        <div className="section-spacing">
+        <div className="mb-8">
           <div className="flex items-start justify-between gap-8">
             <div className="flex-1">
-              <h1 className="text-4xl lg:text-5xl font-bold text-gradient mb-4">Companies</h1>
-              <p className="text-lg text-gray-600 leading-relaxed max-w-2xl">Discover and analyze innovative companies with AI-powered insights</p>
+              <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4">Company Directory</h1>
+              <p className="text-base text-slate-300 leading-relaxed max-w-2xl">Discover and analyze innovative companies with AI-powered insights and advanced filtering</p>
               <div className="hidden lg:flex items-center gap-3 mt-4">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-sm text-gray-500 font-medium">Live Data</span>
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                <span className="text-sm text-slate-400 font-medium">Live Data</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Premium Search and Filters */}
-        <div className="glass rounded-xl p-4 lg:p-6 mb-6 border border-white/20 shadow-premium">
+        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Enhanced Search */}
             <div className="md:col-span-2">
-              <label htmlFor="search" className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
+              <label htmlFor="search" className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wide">
                 Search Companies
               </label>
               <div className="relative group">
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
@@ -223,14 +223,14 @@ function CompaniesPageContent() {
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-10 pr-3 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 text-sm"
+                  className="w-full pl-10 pr-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-slate-400 transition-all duration-200"
                 />
               </div>
             </div>
 
             {/* Enhanced Industry Filter */}
             <div>
-              <label htmlFor="industry" className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
+              <label htmlFor="industry" className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wide">
                 Industry
               </label>
               <div className="relative">
@@ -241,7 +241,7 @@ function CompaniesPageContent() {
                     setSelectedIndustry(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 appearance-none cursor-pointer text-sm"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer text-white transition-all duration-200"
                 >
                   <option value="">All Industries</option>
                   {industries.map(industry => (
@@ -249,7 +249,7 @@ function CompaniesPageContent() {
                   ))}
                 </select>
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -258,7 +258,7 @@ function CompaniesPageContent() {
 
             {/* Enhanced Stage Filter */}
             <div>
-              <label htmlFor="stage" className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
+              <label htmlFor="stage" className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wide">
                 Stage
               </label>
               <div className="relative">
@@ -269,7 +269,7 @@ function CompaniesPageContent() {
                     setSelectedStage(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 appearance-none cursor-pointer text-sm"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer text-white transition-all duration-200"
                 >
                   <option value="">All Stages</option>
                   {stages.map(stage => (
@@ -277,7 +277,7 @@ function CompaniesPageContent() {
                   ))}
                 </select>
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -290,7 +290,7 @@ function CompaniesPageContent() {
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 onClick={resetFilters}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium text-sm transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
+                className="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg hover:bg-slate-600/50 font-medium text-sm transition-all duration-200 border border-slate-600/50"
               >
                 <span className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,7 +301,7 @@ function CompaniesPageContent() {
               </button>
               <button
                 onClick={handleSaveSearch}
-                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-lg font-medium text-sm transition-all duration-200 hover:scale-105 shadow-md"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-all duration-200"
               >
                 <span className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,47 +316,47 @@ function CompaniesPageContent() {
 
         {/* Enhanced Results Count */}
         <div className="mb-6 flex items-center justify-between">
-          <div className="text-sm text-gray-600 font-medium">
-            Showing <span className="text-gradient font-bold">{paginatedCompanies.length}</span> of <span className="text-gradient font-bold">{filteredAndSortedCompanies.length}</span> companies
+          <div className="text-sm text-slate-400 font-medium">
+            Showing <span className="text-white font-bold">{paginatedCompanies.length}</span> of <span className="text-white font-bold">{filteredAndSortedCompanies.length}</span> companies
           </div>
           {filteredAndSortedCompanies.length > 0 && (
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm text-gray-500">Live data</span>
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-sm text-slate-400">Live data</span>
             </div>
           )}
         </div>
 
         {/* Enhanced Companies Table */}
-        <div className="glass rounded-2xl overflow-hidden border border-white/20 shadow-premium">
-          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 border-b border-white/20">
-            <h3 className="text-xl font-bold text-white flex items-center gap-3">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden">
+          <div className="bg-slate-900/50 p-6 border-b border-slate-700/50">
+            <h3 className="text-lg font-bold text-white flex items-center gap-3">
+              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               Company Directory
             </h3>
-            <p className="text-blue-100 text-sm mt-1">Browse and analyze innovative companies</p>
+            <p className="text-slate-400 text-sm mt-1">Browse and analyze innovative companies</p>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-slate-900/30 border-b border-slate-700/50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                     #
                   </th>
                   <th 
                     onClick={() => handleSort('name')}
-                    className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-all duration-200 group"
+                    className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-800/50 transition-all duration-200 group"
                   >
                     <div className="flex items-center gap-2">
                       Company
-                      <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                       </svg>
                       {sortField === 'name' && (
-                        <span className="text-blue-600 font-bold">
+                        <span className="text-blue-400 font-bold">
                           {sortDirection === 'asc' ? '↑' : '↓'}
                         </span>
                       )}
@@ -364,15 +364,15 @@ function CompaniesPageContent() {
                   </th>
                   <th 
                     onClick={() => handleSort('industry')}
-                    className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-all duration-200 group"
+                    className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-800/50 transition-all duration-200 group"
                   >
                     <div className="flex items-center gap-2">
                       Industry
-                      <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                       </svg>
                       {sortField === 'industry' && (
-                        <span className="text-blue-600 font-bold">
+                        <span className="text-blue-400 font-bold">
                           {sortDirection === 'asc' ? '↑' : '↓'}
                         </span>
                       )}
@@ -380,72 +380,72 @@ function CompaniesPageContent() {
                   </th>
                   <th 
                     onClick={() => handleSort('stage')}
-                    className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-all duration-200 group"
+                    className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider cursor-pointer hover:bg-slate-800/50 transition-all duration-200 group"
                   >
                     <div className="flex items-center gap-2">
                       Stage
-                      <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                       </svg>
                       {sortField === 'stage' && (
-                        <span className="text-blue-600 font-bold">
+                        <span className="text-blue-400 font-bold">
                           {sortDirection === 'asc' ? '↓' : '↑'}
                         </span>
                       )}
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-slate-800/20 divide-y divide-slate-700/30">
                 {paginatedCompanies.length > 0 ? (
                   paginatedCompanies.map((company, index) => (
-                    <tr key={company.id} className="hover:bg-gray-50 transition-all duration-300 group">
-                      <td className="px-6 py-8">
+                    <tr key={company.id} className="hover:bg-slate-700/30 transition-all duration-300 group">
+                      <td className="px-6 py-6">
                         <div className="flex items-center justify-center">
-                          <span className="text-lg font-bold text-gray-700 group-hover:text-gray-900 transition-colors">
+                          <span className="text-lg font-bold text-slate-400 group-hover:text-white transition-colors">
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-8">
+                      <td className="px-6 py-6">
                         <div className="flex-1 min-w-0">
                             <button
                               onClick={() => handleCompanyClick(company)}
-                              className="text-xl font-bold text-black hover:text-gray-700 cursor-pointer text-left transition-all hover:scale-105 transform block group-hover:text-gray-700"
+                              className="text-lg font-bold text-white hover:text-blue-400 cursor-pointer text-left transition-all hover:scale-105 transform block group-hover:text-blue-400"
                             >
                               {company.name}
                             </button>
-                            <p className="text-base text-gray-500 mt-3 leading-relaxed line-clamp-2">
+                            <p className="text-sm text-slate-400 mt-2 leading-relaxed line-clamp-2">
                               {company.description.substring(0, 120)}...
                             </p>
                           </div>
                       </td>
-                      <td className="px-6 py-8">
-                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-50 text-black border border-gray-200">
+                      <td className="px-6 py-6">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-700/50 text-slate-300 border border-slate-600/50">
                           {company.industry}
                         </span>
                       </td>
-                      <td className="px-6 py-8">
-                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${
-                          company.stage === 'Series C' || company.stage === 'Series B' ? 'bg-gray-100 text-black border-gray-300' :
-                          company.stage === 'Series A' ? 'bg-gray-100 text-black border-gray-300' :
-                          company.stage === 'Seed' ? 'bg-gray-100 text-black border-gray-300' :
-                          company.stage === 'Public' ? 'bg-gray-100 text-black border-gray-300' :
-                          'bg-gray-50 text-black border-gray-200'
+                      <td className="px-6 py-6">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
+                          company.stage === 'Series C' || company.stage === 'Series B' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700/50' :
+                          company.stage === 'Series A' ? 'bg-blue-900/30 text-blue-300 border-blue-700/50' :
+                          company.stage === 'Seed' ? 'bg-orange-900/30 text-orange-300 border-orange-700/50' :
+                          company.stage === 'Public' ? 'bg-purple-900/30 text-purple-300 border-purple-700/50' :
+                          'bg-slate-700/50 text-slate-300 border-slate-600/50'
                         }`}>
                           {company.stage}
                         </span>
                       </td>
-                      <td className="px-6 py-8">
-                        <div className="flex items-center gap-4">
+                      <td className="px-6 py-6">
+                        <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleCompanyClick(company)}
-                            className="inline-flex items-center gap-3 px-8 py-4 bg-gray-800 text-black rounded-xl font-bold text-lg hover:bg-gray-900 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl border border-gray-700"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 hover:scale-105"
                           >
-                            <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                             Enrich
@@ -454,9 +454,9 @@ function CompaniesPageContent() {
                             href={company.website}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 hover:scale-105"
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-slate-700/50 border border-slate-600/50 text-slate-300 rounded-lg font-medium hover:bg-slate-600/50 transition-all duration-200 hover:scale-105"
                           >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                             Visit
@@ -469,20 +469,20 @@ function CompaniesPageContent() {
                   <tr>
                     <td colSpan={5} className="px-12 py-20 text-center">
                       <div className="flex flex-col items-center">
-                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-8">
-                          <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-20 h-20 bg-slate-700/50 rounded-full flex items-center justify-center mb-8">
+                          <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-3">No companies found</h3>
-                        <p className="text-gray-500 mb-8 text-center max-w-md text-lg">
+                        <h3 className="text-xl font-bold text-white mb-3">No companies found</h3>
+                        <p className="text-slate-400 mb-8 text-center max-w-md">
                           Try adjusting your search criteria or filters to find the companies you're looking for.
                         </p>
                         <button
                           onClick={resetFilters}
-                          className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 hover:scale-105"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
                           Clear Filters
@@ -499,14 +499,14 @@ function CompaniesPageContent() {
         {/* Enhanced Pagination */}
         {totalPages > 1 && (
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-gray-600 font-medium">
-              Page <span className="text-gradient font-bold">{currentPage}</span> of <span className="text-gradient font-bold">{totalPages}</span>
+            <div className="text-sm text-slate-400 font-medium">
+              Page <span className="text-white font-bold">{currentPage}</span> of <span className="text-white font-bold">{totalPages}</span>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 btn-secondary text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+                className="px-3 py-2 bg-slate-700/50 text-slate-300 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600/50 transition-all duration-200 hover:scale-105"
               >
                 <span className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -523,8 +523,8 @@ function CompaniesPageContent() {
                     onClick={() => setCurrentPage(page)}
                     className={`px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 hover:scale-105 ${
                       currentPage === page
-                        ? 'btn-primary shadow-sm'
-                        : 'btn-secondary'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
                     }`}
                   >
                     {page}
@@ -534,7 +534,7 @@ function CompaniesPageContent() {
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 btn-secondary text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
+                className="px-3 py-2 bg-slate-700/50 text-slate-300 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-600/50 transition-all duration-200 hover:scale-105"
               >
                 <span className="flex items-center gap-2">
                   Next
@@ -644,13 +644,13 @@ function CompaniesPageContent() {
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t border-gray-200 p-6">
+              <div className="border-t border-slate-700/50 p-6 bg-slate-800/50">
                 <div className="flex items-center justify-between">
                   <a
                     href={selectedCompany.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-500 transition-all duration-200"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -659,7 +659,7 @@ function CompaniesPageContent() {
                   </a>
                   <button
                     onClick={handleCloseEnrichmentModal}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                    className="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-md hover:bg-slate-600/50 transition-all duration-200"
                   >
                     Close
                   </button>
