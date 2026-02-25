@@ -394,9 +394,8 @@ export default function CompanyProfilePage() {
         {/* AI Enrichment Section */}
         {showEnrichment && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <EnrichmentPanel 
+            <EnrichmentPanel
               companyUrl={company.website} 
-              companyName={company.name} 
             />
           </div>
         )}

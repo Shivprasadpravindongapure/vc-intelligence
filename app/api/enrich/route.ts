@@ -3,11 +3,11 @@ import * as cheerio from 'cheerio';
 
 interface EnrichmentResult {
   summary: string;
-  whatTheyDo: string;
+  whatTheyDo: string[]; // Changed to array for bullet points
   keywords: string[];
   signals: string[];
-  sources: string[];
-  timestamp: string;
+  sources: { url: string; timestamp: string }[]; // Changed to object array with timestamps
+  enrichedAt: string; // Renamed from timestamp
   error?: string;
 }
 
@@ -99,7 +99,7 @@ async function scrapeWebsite(url: string): Promise<string> {
 }
 
 // Analyze content using OpenAI
-async function analyzeWithOpenAI(content: string, url: string): Promise<Omit<EnrichmentResult, 'timestamp'>> {
+async function analyzeWithOpenAI(content: string, url: string): Promise<Omit<EnrichmentResult, 'enrichedAt'>> {
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
     throw new Error('OpenAI API key not configured');
@@ -115,11 +115,11 @@ ${content}
 
 Please provide a JSON response with the following structure:
 {
-  "summary": "A concise 2-3 sentence summary of what this company does",
-  "whatTheyDo": "Detailed description of their products, services, or business model",
-  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
-  "signals": ["signal1", "signal2", "signal3"],
-  "sources": ["source1", "source2"]
+  "summary": "A concise 1-2 sentence summary of what this company does",
+  "whatTheyDo": ["Bullet point 1 about their business model", "Bullet point 2 about their products/services", "Bullet point 3 about their target market", "Bullet point 4 about their key technologies", "Bullet point 5 about their competitive advantages"],
+  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6", "keyword7", "keyword8"],
+  "signals": ["signal1", "signal2", "signal3", "signal4"],
+  "sources": [{"url": "source1", "timestamp": "2024-01-01T00:00:00Z"}, {"url": "source2", "timestamp": "2024-01-01T00:00:00Z"}]
 }
 
 Focus on:
@@ -170,10 +170,10 @@ Respond only with valid JSON, no additional text.
     const parsed = JSON.parse(contentResult);
     return {
       summary: parsed.summary || 'No summary available',
-      whatTheyDo: parsed.whatTheyDo || 'No description available',
+      whatTheyDo: Array.isArray(parsed.whatTheyDo) ? parsed.whatTheyDo : ['No description available'],
       keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
       signals: Array.isArray(parsed.signals) ? parsed.signals : [],
-      sources: Array.isArray(parsed.sources) ? parsed.sources : [url]
+      sources: Array.isArray(parsed.sources) ? parsed.sources : [{ url, timestamp: new Date().toISOString() }]
     };
   } catch (parseError) {
     console.error('JSON parsing error:', parseError);
@@ -182,7 +182,7 @@ Respond only with valid JSON, no additional text.
 }
 
 // Analyze content using Anthropic Claude (fallback)
-async function analyzeWithAnthropic(content: string, url: string): Promise<Omit<EnrichmentResult, 'timestamp'>> {
+async function analyzeWithAnthropic(content: string, url: string): Promise<Omit<EnrichmentResult, 'enrichedAt'>> {
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicKey) {
     throw new Error('Anthropic API key not configured');
@@ -197,11 +197,11 @@ ${content}
 
 Please provide a JSON response with the following structure:
 {
-  "summary": "A concise 2-3 sentence summary of what this company does",
-  "whatTheyDo": "Detailed description of their products, services, or business model",
-  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
-  "signals": ["signal1", "signal2", "signal3"],
-  "sources": ["source1", "source2"]
+  "summary": "A concise 1-2 sentence summary of what this company does",
+  "whatTheyDo": ["Bullet point 1 about their business model", "Bullet point 2 about their products/services", "Bullet point 3 about their target market", "Bullet point 4 about their key technologies", "Bullet point 5 about their competitive advantages"],
+  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5", "keyword6", "keyword7", "keyword8"],
+  "signals": ["signal1", "signal2", "signal3", "signal4"],
+  "sources": [{"url": "source1", "timestamp": "2024-01-01T00:00:00Z"}, {"url": "source2", "timestamp": "2024-01-01T00:00:00Z"}]
 }
 
 Focus on business model, target market, technologies, industry positioning, and growth indicators.
@@ -241,10 +241,10 @@ Respond only with valid JSON, no additional text.`;
     const parsed = JSON.parse(contentResult);
     return {
       summary: parsed.summary || 'No summary available',
-      whatTheyDo: parsed.whatTheyDo || 'No description available',
+      whatTheyDo: Array.isArray(parsed.whatTheyDo) ? parsed.whatTheyDo : ['No description available'],
       keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
       signals: Array.isArray(parsed.signals) ? parsed.signals : [],
-      sources: Array.isArray(parsed.sources) ? parsed.sources : [url]
+      sources: Array.isArray(parsed.sources) ? parsed.sources : [{ url, timestamp: new Date().toISOString() }]
     };
   } catch (parseError) {
     console.error('JSON parsing error:', parseError);
@@ -253,20 +253,27 @@ Respond only with valid JSON, no additional text.`;
 }
 
 // Fallback mock enrichment when APIs fail
-function getMockEnrichment(url: string, companyName: string): Omit<EnrichmentResult, 'timestamp'> {
+function getMockEnrichment(url: string, companyName: string): Omit<EnrichmentResult, 'enrichedAt'> {
   const domain = new URL(url).hostname.replace('www.', '');
   
   return {
     summary: `${companyName} is a technology company operating in the digital space, focused on innovation and growth.`,
-    whatTheyDo: `${companyName} provides digital solutions and services through their web platform at ${domain}. The company appears to be focused on delivering value to customers through technology-driven products and services.`,
-    keywords: ['technology', 'innovation', 'digital', 'platform', 'services'],
+    whatTheyDo: [
+      `${companyName} provides digital solutions and services through their web platform`,
+      `The company focuses on delivering value to customers through technology-driven products`,
+      `Operating in the digital space with emphasis on innovation and growth`,
+      `Leveraging modern technologies to enhance their service offerings`,
+      `Building a strong online presence and customer engagement strategies`
+    ],
+    keywords: ['technology', 'innovation', 'digital', 'platform', 'services', 'growth', 'online', 'customer'],
     signals: [
       'Active web presence with professional website',
       'Technology-focused business model',
       'Digital service delivery',
-      'Online customer engagement'
+      'Online customer engagement',
+      'Innovation-driven approach'
     ],
-    sources: [url]
+    sources: [{ url, timestamp: new Date().toISOString() }]
   };
 }
 
@@ -303,7 +310,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Try OpenAI first, fallback to Anthropic, then mock data
-    let analysis: Omit<EnrichmentResult, 'timestamp'>;
+    let analysis: Omit<EnrichmentResult, 'enrichedAt'>;
     
     try {
       analysis = await analyzeWithOpenAI(content, url);
@@ -321,7 +328,7 @@ export async function POST(request: NextRequest) {
 
     const result: EnrichmentResult = {
       ...analysis,
-      timestamp: new Date().toISOString()
+      enrichedAt: new Date().toISOString()
     };
 
     return NextResponse.json(result);
@@ -331,7 +338,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: error instanceof Error ? error.message : 'Unknown error occurred',
-        timestamp: new Date().toISOString()
+        enrichedAt: new Date().toISOString()
       },
       { status: 500 }
     );
