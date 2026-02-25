@@ -14,7 +14,9 @@ export default function SavedPage() {
 
   // Load saved searches from localStorage on mount
   useEffect(() => {
-    setSavedSearches(getSavedSearches());
+    setTimeout(() => {
+      setSavedSearches(getSavedSearches());
+    }, 0);
   }, []);
 
   // Handle deleting a saved search

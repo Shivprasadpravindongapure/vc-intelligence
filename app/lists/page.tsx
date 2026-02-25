@@ -7,7 +7,6 @@ import {
   CompanyList, 
   getLists, 
   createList, 
-  addCompanyToList, 
   removeCompanyFromList, 
   deleteList, 
   exportListToJSON 

@@ -10,83 +10,123 @@ export interface Company {
 export const companies: Company[] = [
   {
     id: '1',
-    name: 'TechFlow Solutions',
-    website: 'https://techflow.com',
-    industry: 'SaaS',
-    stage: 'Series A',
-    description: 'AI-powered workflow automation platform for enterprises.'
+    name: 'OpenAI',
+    website: 'https://openai.com',
+    industry: 'AI/ML',
+    stage: 'Series C',
+    description: 'Leading artificial intelligence research company developing advanced AI models and technologies.'
   },
   {
     id: '2',
-    name: 'GreenEnergy Innovations',
-    website: 'https://greenenergy.io',
-    industry: 'CleanTech',
-    stage: 'Seed',
-    description: 'Revolutionary solar panel technology with 40% efficiency.'
+    name: 'Stripe',
+    website: 'https://stripe.com',
+    industry: 'FinTech',
+    stage: 'Series I',
+    description: 'Payment processing platform providing economic infrastructure for the internet.'
   },
   {
     id: '3',
-    name: 'HealthSync',
-    website: 'https://healthsync.com',
-    industry: 'HealthTech',
-    stage: 'Series B',
-    description: 'Digital health platform connecting patients with healthcare providers.'
+    name: 'Airbnb',
+    website: 'https://airbnb.com',
+    industry: 'TravelTech',
+    stage: 'Public',
+    description: 'Online marketplace for lodging and tourism experiences.'
   },
   {
     id: '4',
-    name: 'FinTech Plus',
-    website: 'https://fintechplus.com',
-    industry: 'FinTech',
-    stage: 'Series A',
-    description: 'Mobile-first banking solution for small businesses.'
+    name: 'SpaceX',
+    website: 'https://spacex.com',
+    industry: 'Aerospace',
+    stage: 'Series F',
+    description: 'Private aerospace manufacturer and space transportation company.'
   },
   {
     id: '5',
-    name: 'EduLearn AI',
-    website: 'https://edulearn.ai',
-    industry: 'EdTech',
-    stage: 'Pre-Seed',
-    description: 'Personalized learning platform powered by artificial intelligence.'
+    name: 'Discord',
+    website: 'https://discord.com',
+    industry: 'Social',
+    stage: 'Series H',
+    description: 'Voice, video, and text communication platform designed for communities.'
   },
   {
     id: '6',
-    name: 'CyberShield',
-    website: 'https://cybershield.com',
-    industry: 'Cybersecurity',
-    stage: 'Series C',
-    description: 'Advanced threat detection and prevention for cloud infrastructure.'
+    name: 'Notion',
+    website: 'https://notion.so',
+    industry: 'Productivity',
+    stage: 'Series D',
+    description: 'All-in-one workspace for notes, tasks, wikis, and databases.'
   },
   {
     id: '7',
-    name: 'RetailTech Pro',
-    website: 'https://retailtech.pro',
-    industry: 'RetailTech',
-    stage: 'Series A',
-    description: 'Omnichannel retail management platform with real-time analytics.'
+    name: 'Figma',
+    website: 'https://figma.com',
+    industry: 'Design Tools',
+    stage: 'Series E',
+    description: 'Collaborative web-based design and prototyping tool.'
   },
   {
     id: '8',
-    name: 'LogisticsFlow',
-    website: 'https://logisticsflow.com',
-    industry: 'Logistics',
-    stage: 'Seed',
-    description: 'AI-driven supply chain optimization and tracking system.'
+    name: 'Rivian',
+    website: 'https://rivian.com',
+    industry: 'Automotive',
+    stage: 'Public',
+    description: 'Electric vehicle manufacturer focusing on adventure vehicles.'
   },
   {
     id: '9',
-    name: 'CloudScale',
-    website: 'https://cloudscale.io',
-    industry: 'Cloud Infrastructure',
-    stage: 'Series B',
-    description: 'Serverless computing platform with auto-scaling capabilities.'
+    name: 'Instacart',
+    website: 'https://instacart.com',
+    industry: 'Grocery Tech',
+    stage: 'Public',
+    description: 'North American leader in online grocery delivery and pickup services.'
   },
   {
     id: '10',
-    name: 'BioMed Innovations',
-    website: 'https://biomed.com',
-    industry: 'Biotech',
-    stage: 'Series A',
-    description: 'Gene therapy solutions for rare genetic disorders.'
+    name: 'Databricks',
+    website: 'https://databricks.com',
+    industry: 'Data Analytics',
+    stage: 'Series I',
+    description: 'Unified analytics platform for big data and machine learning.'
+  },
+  {
+    id: '11',
+    name: 'Anthropic',
+    website: 'https://anthropic.com',
+    industry: 'AI/ML',
+    stage: 'Series D',
+    description: 'AI research company focused on building safe, beneficial artificial intelligence.'
+  },
+  {
+    id: '12',
+    name: 'Plaid',
+    website: 'https://plaid.com',
+    industry: 'FinTech',
+    stage: 'Series L',
+    description: 'Financial services platform connecting banks with fintech applications.'
+  },
+  {
+    id: '13',
+    name: 'Robinhood',
+    website: 'https://robinhood.com',
+    industry: 'FinTech',
+    stage: 'Public',
+    description: 'Commission-free stock trading and investing platform.'
+  },
+  {
+    id: '14',
+    name: 'Zoom',
+    website: 'https://zoom.us',
+    industry: 'Communication',
+    stage: 'Public',
+    description: 'Cloud-based video conferencing and collaboration platform.'
+  },
+  {
+    id: '15',
+    name: 'Shopify',
+    website: 'https://shopify.com',
+    industry: 'E-commerce',
+    stage: 'Public',
+    description: 'E-commerce platform for building and managing online stores.'
   }
 ];
 
