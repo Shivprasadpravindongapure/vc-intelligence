@@ -1,19 +1,41 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Layout from '@/components/Layout';
 import { companies, industries, stages, Company } from '@/lib/mockData';
+import Link from 'next/link';
+import { createSavedSearch } from '@/lib/searchManager';
 
 type SortField = 'name' | 'industry' | 'stage';
 type SortDirection = 'asc' | 'desc';
 
 export default function CompaniesPage() {
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState('');
   const [selectedStage, setSelectedStage] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [showSaveSearchModal, setShowSaveSearchModal] = useState(false);
+  const [searchName, setSearchName] = useState('');
+
+  // Load URL parameters on mount
+  useEffect(() => {
+    const search = searchParams.get('search');
+    const industry = searchParams.get('industry');
+    const stage = searchParams.get('stage');
+    
+    if (search) setSearchQuery(search);
+    if (industry) setSelectedIndustry(industry);
+    if (stage) setSelectedStage(stage);
+  }, [searchParams]);
+
+  // Debug: Check if companies data is loaded
+  console.log('Companies data:', companies);
+  console.log('Industries:', industries);
+  console.log('Stages:', stages);
 
   const itemsPerPage = 5;
 
@@ -25,6 +47,12 @@ export default function CompaniesPage() {
       const matchesStage = !selectedStage || company.stage === selectedStage;
       return matchesSearch && matchesIndustry && matchesStage;
     });
+
+    // Debug: Check filtered results
+    console.log('Filtered companies:', filtered);
+    console.log('Search query:', searchQuery);
+    console.log('Selected industry:', selectedIndustry);
+    console.log('Selected stage:', selectedStage);
 
     // Sort companies
     filtered.sort((a, b) => {
@@ -58,6 +86,39 @@ export default function CompaniesPage() {
     setSelectedIndustry('');
     setSelectedStage('');
     setCurrentPage(1);
+  };
+
+  // Handle save search
+  const handleSaveSearch = () => {
+    if (!searchQuery && !selectedIndustry && !selectedStage) {
+      alert('Please apply some filters before saving a search.');
+      return;
+    }
+    setShowSaveSearchModal(true);
+  };
+
+  // Handle create saved search
+  const handleCreateSavedSearch = () => {
+    if (!searchName.trim()) {
+      alert('Please enter a name for your saved search.');
+      return;
+    }
+    
+    try {
+      createSavedSearch(
+        searchName.trim(),
+        searchQuery,
+        selectedIndustry,
+        selectedStage
+      );
+      
+      setSearchName('');
+      setShowSaveSearchModal(false);
+      alert('Search saved successfully!');
+    } catch (error) {
+      console.error('Error saving search:', error);
+      alert('Failed to save search.');
+    }
   };
 
   return (
@@ -134,12 +195,18 @@ export default function CompaniesPage() {
 
           {/* Reset Filters */}
           {(searchQuery || selectedIndustry || selectedStage) && (
-            <div className="mt-4">
+            <div className="mt-4 flex gap-4">
               <button
                 onClick={resetFilters}
                 className="text-sm text-blue-600 hover:text-blue-800 font-medium"
               >
                 Reset Filters
+              </button>
+              <button
+                onClick={handleSaveSearch}
+                className="text-sm text-green-600 hover:text-green-800 font-medium"
+              >
+                Save Search
               </button>
             </div>
           )}
@@ -206,9 +273,12 @@ export default function CompaniesPage() {
                     <tr key={company.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
-                          <div className="text-sm font-medium text-gray-900 hover:text-blue-600 cursor-pointer">
+                          <Link 
+                            href={`/companies/${company.id}`}
+                            className="text-sm font-medium text-gray-900 hover:text-blue-600 cursor-pointer"
+                          >
                             {company.name}
-                          </div>
+                          </Link>
                           <div className="text-sm text-gray-500">
                             {company.description.substring(0, 60)}...
                           </div>
@@ -291,6 +361,59 @@ export default function CompaniesPage() {
               >
                 Next
               </button>
+            </div>
+          </div>
+        )}
+        </div>
+
+        {/* Save Search Modal */}
+        {showSaveSearchModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Save Search</h3>
+              <div className="mb-4">
+                <label htmlFor="searchName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Search Name
+                </label>
+                <input
+                  id="searchName"
+                  type="text"
+                  placeholder="Enter a name for this search..."
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleCreateSavedSearch()}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Search Criteria:</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  {searchQuery && <div>• Search: "{searchQuery}"</div>}
+                  {selectedIndustry && <div>• Industry: {selectedIndustry}</div>}
+                  {selectedStage && <div>• Stage: {selectedStage}</div>}
+                  {!searchQuery && !selectedIndustry && !selectedStage && <div>• No filters applied</div>}
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCreateSavedSearch}
+                  disabled={!searchName.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Save Search
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSaveSearchModal(false);
+                    setSearchName('');
+                  }}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
