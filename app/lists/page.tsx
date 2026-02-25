@@ -22,7 +22,6 @@ export default function ListsPage() {
   // Load lists from localStorage on mount
   useEffect(() => {
     const loadedLists = getLists();
-    console.log('Loaded lists from localStorage:', loadedLists);
     setLists(loadedLists);
   }, []);
 
@@ -32,10 +31,8 @@ export default function ListsPage() {
     
     setLoading(true);
     try {
-      console.log('Creating list:', newListName.trim());
       const newList = createList(newListName.trim());
       const updatedLists = getLists();
-      console.log('Updated lists after creation:', updatedLists);
       setLists(updatedLists);
       setNewListName('');
       setShowCreateForm(false);

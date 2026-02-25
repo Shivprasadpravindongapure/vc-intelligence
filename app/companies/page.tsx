@@ -48,11 +48,7 @@ function CompaniesPageContent() {
     }, 0);
   }, [searchParams]);
 
-  // Debug: Check if companies data is loaded
-  console.log('Companies data:', companies);
-  console.log('Industries:', industries);
-  console.log('Stages:', stages);
-
+  
   const itemsPerPage = 5;
 
   // Filter and sort companies
@@ -64,12 +60,7 @@ function CompaniesPageContent() {
       return matchesSearch && matchesIndustry && matchesStage;
     });
 
-    // Debug: Check filtered results
-    console.log('Filtered companies:', filtered);
-    console.log('Search query:', searchQuery);
-    console.log('Selected industry:', selectedIndustry);
-    console.log('Selected stage:', selectedStage);
-
+    
     // Sort companies
     filtered.sort((a, b) => {
       const aValue = a[sortField];
