@@ -54,75 +54,106 @@ export default function SavedPage() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
+        {/* Premium Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Saved Searches</h1>
-          <p className="text-gray-600">Manage and apply your saved company searches</p>
+          <h1 className="text-4xl lg:text-5xl font-bold text-gradient mb-2">Saved Searches</h1>
+          <p className="text-lg text-gray-600">Manage and apply your saved company searches with intelligent filters</p>
         </div>
 
         {savedSearches.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <div className="text-gray-400 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="glass rounded-2xl p-20 text-center border border-white/20 shadow-premium">
+            <div className="text-gray-400 mb-8">
+              <svg className="w-24 h-24 mx-auto animate-float" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No saved searches yet</h3>
-            <p className="text-gray-500 mb-6">
-              Save your frequently used searches to quickly access them later
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">No saved searches yet</h3>
+            <p className="text-gray-500 mb-10 max-w-md mx-auto text-lg">
+              Save your frequently used searches to quickly access them later and streamline your workflow
             </p>
             <button
               onClick={() => window.location.href = '/companies'}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="btn-primary px-8 py-4 font-bold shadow-premium hover:shadow-xl hover-glow text-lg"
             >
-              Search Companies
+              <span className="flex items-center gap-3">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Search Companies
+              </span>
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {savedSearches.map((search) => (
+          <div className="space-y-8">
+            {savedSearches.map((search, index) => (
               <div
                 key={search.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                className="card-premium p-10 hover:shadow-2xl transition-all duration-300 animate-slideUp hover-glow group"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{search.name}</h3>
-                    <p className="text-gray-600 mb-3">{getSearchDescription(search)}</p>
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>Created {formatDate(search.createdAt)}</span>
-                      {search.searchQuery && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                          Search: {search.searchQuery}
-                        </span>
-                      )}
-                      {search.selectedIndustry && (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                          {search.selectedIndustry}
-                        </span>
-                      )}
-                      {search.selectedStage && (
-                        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">
-                          {search.selectedStage}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-4 mb-6">
+                      <h3 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{search.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-sm text-gray-500 font-medium">Active</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-600 mb-8 leading-relaxed text-lg">{getSearchDescription(search)}</p>
+                    <div className="flex flex-wrap items-center gap-6 text-sm">
+                      <div className="flex items-center gap-3 text-gray-500 font-medium">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>Created {formatDate(search.createdAt)}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        {search.searchQuery && (
+                          <span className="tag tag-primary hover-lift flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            {search.searchQuery}
+                          </span>
+                        )}
+                        {search.selectedIndustry && (
+                          <span className="tag tag-success hover-lift flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            {search.selectedIndustry}
+                          </span>
+                        )}
+                        {search.selectedStage && (
+                          <span className="tag tag-warning hover-lift flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            {search.selectedStage}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex gap-4 ml-8">
                     <button
                       onClick={() => handleApplySearch(search)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+                      className="btn-primary px-8 py-4 font-bold shadow-md hover:shadow-lg hover-glow group"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                      Apply
+                      <span className="flex items-center gap-3">
+                        <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                        Apply Search
+                      </span>
                     </button>
                     <button
                       onClick={() => handleDeleteSearch(search.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-md"
-                      title="Delete search"
+                      className="p-4 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-110 tooltip"
+                      data-tooltip="Delete search"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

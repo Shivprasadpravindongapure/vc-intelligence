@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Layout from '@/components/Layout';
 import { companies, industries, stages, Company } from '@/lib/mockData';
-import Link from 'next/link';
 import { createSavedSearch } from '@/lib/searchManager';
 import EnrichmentPanel from '@/components/EnrichmentPanel';
 import { 
@@ -48,11 +47,7 @@ function CompaniesPageContent() {
     }, 0);
   }, [searchParams]);
 
-  // Debug: Check if companies data is loaded
-  console.log('Companies data:', companies);
-  console.log('Industries:', industries);
-  console.log('Stages:', stages);
-
+  
   const itemsPerPage = 5;
 
   // Filter and sort companies
@@ -64,12 +59,7 @@ function CompaniesPageContent() {
       return matchesSearch && matchesIndustry && matchesStage;
     });
 
-    // Debug: Check filtered results
-    console.log('Filtered companies:', filtered);
-    console.log('Search query:', searchQuery);
-    console.log('Selected industry:', selectedIndustry);
-    console.log('Selected stage:', selectedStage);
-
+    
     // Sort companies
     filtered.sort((a, b) => {
       const aValue = a[sortField];
@@ -196,113 +186,177 @@ function CompaniesPageContent() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">VC Intelligence Platform</h1>
-          <p className="text-lg text-gray-600">Discover and analyze innovative companies with AI-powered insights</p>
+        {/* Premium Header */}
+        <div className="section-spacing">
+          <div className="flex items-start justify-between gap-8">
+            <div className="flex-1">
+              <h1 className="text-4xl lg:text-5xl font-bold text-gradient mb-4">Companies</h1>
+              <p className="text-lg text-gray-600 leading-relaxed max-w-2xl">Discover and analyze innovative companies with AI-powered insights</p>
+              <div className="hidden lg:flex items-center gap-3 mt-4">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-sm text-gray-500 font-medium">Live Data</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+        {/* Premium Search and Filters */}
+        <div className="glass rounded-xl p-4 lg:p-6 mb-6 border border-white/20 shadow-premium">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
+            {/* Enhanced Search */}
             <div className="md:col-span-2">
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="search" className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
                 Search Companies
               </label>
-              <input
-                id="search"
-                type="text"
-                placeholder="Search by company name..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="relative group">
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                  <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  id="search"
+                  type="text"
+                  placeholder="Search by company name..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-10 pr-3 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 text-sm"
+                />
+              </div>
             </div>
 
-            {/* Industry Filter */}
+            {/* Enhanced Industry Filter */}
             <div>
-              <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="industry" className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
                 Industry
               </label>
-              <select
-                id="industry"
-                value={selectedIndustry}
-                onChange={(e) => {
-                  setSelectedIndustry(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Industries</option>
-                {industries.map(industry => (
-                  <option key={industry} value={industry}>{industry}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  id="industry"
+                  value={selectedIndustry}
+                  onChange={(e) => {
+                    setSelectedIndustry(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 appearance-none cursor-pointer text-sm"
+                >
+                  <option value="">All Industries</option>
+                  {industries.map(industry => (
+                    <option key={industry} value={industry}>{industry}</option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
-            {/* Stage Filter */}
+            {/* Enhanced Stage Filter */}
             <div>
-              <label htmlFor="stage" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="stage" className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
                 Stage
               </label>
-              <select
-                id="stage"
-                value={selectedStage}
-                onChange={(e) => {
-                  setSelectedStage(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Stages</option>
-                {stages.map(stage => (
-                  <option key={stage} value={stage}>{stage}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  id="stage"
+                  value={selectedStage}
+                  onChange={(e) => {
+                    setSelectedStage(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 appearance-none cursor-pointer text-sm"
+                >
+                  <option value="">All Stages</option>
+                  {stages.map(stage => (
+                    <option key={stage} value={stage}>{stage}</option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Reset Filters */}
+          {/* Enhanced Filter Actions */}
           {(searchQuery || selectedIndustry || selectedStage) && (
-            <div className="mt-4 flex gap-4">
+            <div className="mt-4 flex flex-wrap gap-2">
               <button
                 onClick={resetFilters}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium text-sm transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
               >
-                Reset Filters
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Reset Filters
+                </span>
               </button>
               <button
                 onClick={handleSaveSearch}
-                className="text-sm text-green-600 hover:text-green-800 font-medium"
+                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-lg font-medium text-sm transition-all duration-200 hover:scale-105 shadow-md"
               >
-                Save Search
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12m3-3v12m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Save Search
+                </span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-600">
-          Showing {paginatedCompanies.length} of {filteredAndSortedCompanies.length} companies
+        {/* Enhanced Results Count */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600 font-medium">
+            Showing <span className="text-gradient font-bold">{paginatedCompanies.length}</span> of <span className="text-gradient font-bold">{filteredAndSortedCompanies.length}</span> companies
+          </div>
+          {filteredAndSortedCompanies.length > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-sm text-gray-500">Live data</span>
+            </div>
+          )}
         </div>
 
-        {/* Companies Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        {/* Enhanced Companies Table */}
+        <div className="glass rounded-2xl overflow-hidden border border-white/20 shadow-premium">
+          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 border-b border-white/20">
+            <h3 className="text-xl font-bold text-white flex items-center gap-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              Company Directory
+            </h3>
+            <p className="text-blue-100 text-sm mt-1">Browse and analyze innovative companies</p>
+          </div>
+          
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    #
+                  </th>
                   <th 
                     onClick={() => handleSort('name')}
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors"
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-all duration-200 group"
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       Company
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                      </svg>
                       {sortField === 'name' && (
-                        <span className="ml-2 text-blue-600">
+                        <span className="text-blue-600 font-bold">
                           {sortDirection === 'asc' ? '↑' : '↓'}
                         </span>
                       )}
@@ -310,12 +364,15 @@ function CompaniesPageContent() {
                   </th>
                   <th 
                     onClick={() => handleSort('industry')}
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors"
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-all duration-200 group"
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       Industry
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                      </svg>
                       {sortField === 'industry' && (
-                        <span className="ml-2 text-blue-600">
+                        <span className="text-blue-600 font-bold">
                           {sortDirection === 'asc' ? '↑' : '↓'}
                         </span>
                       )}
@@ -323,73 +380,83 @@ function CompaniesPageContent() {
                   </th>
                   <th 
                     onClick={() => handleSort('stage')}
-                    className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100 transition-colors"
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-all duration-200 group"
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       Stage
+                      <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                      </svg>
                       {sortField === 'stage' && (
-                        <span className="ml-2 text-blue-600">
+                        <span className="text-blue-600 font-bold">
                           {sortDirection === 'asc' ? '↓' : '↑'}
                         </span>
                       )}
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="bg-white divide-y divide-gray-200">
                 {paginatedCompanies.length > 0 ? (
-                  paginatedCompanies.map((company) => (
-                    <tr key={company.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <button
-                            onClick={() => handleCompanyClick(company)}
-                            className="text-sm font-semibold text-blue-600 hover:text-blue-800 cursor-pointer text-left transition-colors"
-                          >
-                            {company.name}
-                          </button>
-                          <div className="text-sm text-gray-500 mt-1">
-                            {company.description.substring(0, 80)}...
-                          </div>
+                  paginatedCompanies.map((company, index) => (
+                    <tr key={company.id} className="hover:bg-gray-50 transition-all duration-300 group">
+                      <td className="px-6 py-8">
+                        <div className="flex items-center justify-center">
+                          <span className="text-lg font-bold text-gray-700 group-hover:text-gray-900 transition-colors">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300">
+                      <td className="px-6 py-8">
+                        <div className="flex-1 min-w-0">
+                            <button
+                              onClick={() => handleCompanyClick(company)}
+                              className="text-xl font-bold text-black hover:text-gray-700 cursor-pointer text-left transition-all hover:scale-105 transform block group-hover:text-gray-700"
+                            >
+                              {company.name}
+                            </button>
+                            <p className="text-base text-gray-500 mt-3 leading-relaxed line-clamp-2">
+                              {company.description.substring(0, 120)}...
+                            </p>
+                          </div>
+                      </td>
+                      <td className="px-6 py-8">
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-50 text-black border border-gray-200">
                           {company.industry}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${
-                          company.stage === 'Series C' || company.stage === 'Series B' ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300' :
-                          company.stage === 'Series A' ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border-yellow-300' :
-                          company.stage === 'Seed' ? 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border-orange-300' :
-                          company.stage === 'Public' ? 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border-purple-300' :
-                          'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border-gray-300'
+                      <td className="px-6 py-8">
+                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border ${
+                          company.stage === 'Series C' || company.stage === 'Series B' ? 'bg-gray-100 text-black border-gray-300' :
+                          company.stage === 'Series A' ? 'bg-gray-100 text-black border-gray-300' :
+                          company.stage === 'Seed' ? 'bg-gray-100 text-black border-gray-300' :
+                          company.stage === 'Public' ? 'bg-gray-100 text-black border-gray-300' :
+                          'bg-gray-50 text-black border-gray-200'
                         }`}>
                           {company.stage}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
+                      <td className="px-6 py-8">
+                        <div className="flex items-center gap-4">
                           <button
                             onClick={() => handleCompanyClick(company)}
-                            className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors"
+                            className="inline-flex items-center gap-3 px-8 py-4 bg-gray-800 text-black rounded-xl font-bold text-lg hover:bg-gray-900 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl border border-gray-700"
                           >
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
-                            Analyze
+                            Enrich
                           </button>
                           <a
                             href={company.website}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-200 transition-colors"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 hover:scale-105"
                           >
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                             Visit
@@ -400,14 +467,27 @@ function CompaniesPageContent() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
-                      <div className="text-gray-400 mb-4">
-                        <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                    <td colSpan={5} className="px-12 py-20 text-center">
+                      <div className="flex flex-col items-center">
+                        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-8">
+                          <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3">No companies found</h3>
+                        <p className="text-gray-500 mb-8 text-center max-w-md text-lg">
+                          Try adjusting your search criteria or filters to find the companies you're looking for.
+                        </p>
+                        <button
+                          onClick={resetFilters}
+                          className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Clear Filters
+                        </button>
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No companies found</h3>
-                      <p className="text-gray-500">Try adjusting your search criteria</p>
                     </td>
                   </tr>
                 )}
@@ -416,19 +496,24 @@ function CompaniesPageContent() {
           </div>
         </div>
 
-        {/* Pagination */}
+        {/* Enhanced Pagination */}
         {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Page {currentPage} of {totalPages}
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-600 font-medium">
+              Page <span className="text-gradient font-bold">{currentPage}</span> of <span className="text-gradient font-bold">{totalPages}</span>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 btn-secondary text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
               >
-                Previous
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Previous
+                </span>
               </button>
               {[...Array(totalPages)].map((_, index) => {
                 const page = index + 1;
@@ -436,10 +521,10 @@ function CompaniesPageContent() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 text-sm border rounded-md ${
+                    className={`px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 hover:scale-105 ${
                       currentPage === page
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-gray-300 hover:bg-gray-50'
+                        ? 'btn-primary shadow-sm'
+                        : 'btn-secondary'
                     }`}
                   >
                     {page}
@@ -449,9 +534,14 @@ function CompaniesPageContent() {
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 btn-secondary text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-transform"
               >
-                Next
+                <span className="flex items-center gap-2">
+                  Next
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
               </button>
             </div>
           </div>
@@ -549,7 +639,6 @@ function CompaniesPageContent() {
               <div className="p-6">
                 <EnrichmentPanel 
                   companyUrl={selectedCompany.website} 
-                  companyName={selectedCompany.name} 
                   onAddToList={handleAddToList}
                 />
               </div>
