@@ -52,13 +52,13 @@ export default function Home() {
     <Layout>
       <div className="min-h-screen">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 overflow-hidden">
+        <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 animate-pulse"></div>
-            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-float"></div>
-            <div className="absolute top-20 right-20 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute bottom-20 left-32 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-800/10 to-purple-800/10 animate-pulse"></div>
+            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-700/5 rounded-full blur-3xl animate-float"></div>
+            <div className="absolute top-20 right-20 w-72 h-72 bg-purple-700/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+            <div className="absolute bottom-20 left-32 w-64 h-64 bg-indigo-700/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
           </div>
 
           {/* Content */}
@@ -70,10 +70,10 @@ export default function Home() {
             </div>
 
             {/* Main Title */}
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-              <span className="block mb-2">Discover</span>
-              <span className="block bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Investment Opportunities
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+              <span className="block mb-2">VC Intelligence</span>
+              <span className="block bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                Smart Investment Analysis
               </span>
             </h1>
 
@@ -103,7 +103,7 @@ export default function Home() {
           </div>
         </section>
 
-        </div>
+      </div>
     </Layout>
   );
 }
