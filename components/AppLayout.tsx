@@ -70,6 +70,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
           {children}
         </div>
+
+        <footer style={{ borderTop: '1px solid #333', padding: '10px 20px', color: '#999', fontSize: '12px', textAlign: 'center' }}>
+          Made by SD&apos;
+        </footer>
       </div>
     </div>
   );
