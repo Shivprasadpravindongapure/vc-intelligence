@@ -22,22 +22,38 @@ export default function CompanyProfilePage() {
   const [newListName, setNewListName] = useState('');
   const [notes, setNotes] = useState('');
   const [noteStatus, setNoteStatus] = useState('');
-  const notesStorageKey = `vc-notes-${companyId}`;
+  
+  // Generate user-specific notes storage key
+  const getNotesStorageKey = (companyId: string): string => {
+    if (typeof window === 'undefined') return `vc-notes-${companyId}`;
+    
+    const userKey = 'vc-intelligence-user-id';
+    let userId = localStorage.getItem(userKey);
+    
+    if (!userId) {
+      userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem(userKey, userId);
+    }
+    
+    return `vc-notes-${userId}-${companyId}`;
+  };
 
   useEffect(() => {
     const foundCompany = companies.find(c => c.id === companyId);
     setCompany(foundCompany || null);
     setLists(getLists());
     if (typeof window !== 'undefined') {
-      setNotes(localStorage.getItem(notesStorageKey) || '');
+      const notesKey = getNotesStorageKey(companyId);
+      setNotes(localStorage.getItem(notesKey) || '');
       setNoteStatus('');
     }
     setLoading(false);
-  }, [companyId, notesStorageKey]);
+  }, [companyId]);
 
   const handleSaveNotes = () => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(notesStorageKey, notes);
+    const notesKey = getNotesStorageKey(companyId);
+    localStorage.setItem(notesKey, notes);
     setNoteStatus('Notes saved');
   };
 

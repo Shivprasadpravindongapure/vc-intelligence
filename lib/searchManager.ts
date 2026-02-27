@@ -31,15 +31,34 @@ export interface SavedCompaniesState {
   companies: SavedCompany[];
 }
 
-const SEARCHES_STORAGE_KEY = 'vc-intelligence-saved-searches';
-const COMPANIES_STORAGE_KEY = 'vc-intelligence-saved-companies';
+// Generate user-specific storage key
+const getUserStorageKey = (baseKey: string): string => {
+  if (typeof window === 'undefined') return baseKey;
+  
+  // Check if this is a new user (first visit)
+  const userKey = 'vc-intelligence-user-id';
+  let userId = localStorage.getItem(userKey);
+  
+  if (!userId) {
+    // Generate new user ID for first-time visitors
+    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem(userKey, userId);
+    
+    // Clear any existing data from previous users
+    localStorage.removeItem(baseKey);
+  }
+  
+  return `${baseKey}-${userId}`;
+};
 
 // Get all saved searches from localStorage
 export const getSavedSearches = (): SavedSearch[] => {
   if (typeof window === 'undefined') return [];
   
+  const storageKey = getUserStorageKey('vc-intelligence-saved-searches');
+  
   try {
-    const stored = localStorage.getItem(SEARCHES_STORAGE_KEY);
+    const stored = localStorage.getItem(storageKey);
     if (!stored) return [];
     
     const parsed = JSON.parse(stored);
@@ -54,8 +73,10 @@ export const getSavedSearches = (): SavedSearch[] => {
 export const getSavedCompanies = (): SavedCompany[] => {
   if (typeof window === 'undefined') return [];
   
+  const storageKey = getUserStorageKey('vc-intelligence-saved-companies');
+  
   try {
-    const stored = localStorage.getItem(COMPANIES_STORAGE_KEY);
+    const stored = localStorage.getItem(storageKey);
     if (!stored) return [];
     
     const parsed = JSON.parse(stored);
@@ -70,9 +91,11 @@ export const getSavedCompanies = (): SavedCompany[] => {
 export const saveSavedSearches = (searches: SavedSearch[]): void => {
   if (typeof window === 'undefined') return;
   
+  const storageKey = getUserStorageKey('vc-intelligence-saved-searches');
+  
   try {
     const state: SavedSearchesState = { searches };
-    localStorage.setItem(SEARCHES_STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(storageKey, JSON.stringify(state));
   } catch (error) {
     console.error('Error saving searches to localStorage:', error);
   }
@@ -82,9 +105,11 @@ export const saveSavedSearches = (searches: SavedSearch[]): void => {
 export const saveSavedCompanies = (companies: SavedCompany[]): void => {
   if (typeof window === 'undefined') return;
   
+  const storageKey = getUserStorageKey('vc-intelligence-saved-companies');
+  
   try {
     const state: SavedCompaniesState = { companies };
-    localStorage.setItem(COMPANIES_STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(storageKey, JSON.stringify(state));
   } catch (error) {
     console.error('Error saving companies to localStorage:', error);
   }
