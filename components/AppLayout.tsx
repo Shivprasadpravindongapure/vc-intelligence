@@ -1,17 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-export default function AppLayout({ children }: AppLayoutProps) {
+function AppLayoutContent({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+
+  // Update search query when URL params change
+  useEffect(() => {
+    setSearchQuery(searchParams.get('search') || '');
+  }, [searchParams]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,9 +78,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
 
         <footer style={{ borderTop: '1px solid #333', padding: '10px 20px', color: '#999', fontSize: '12px', textAlign: 'center' }}>
-          Made by SD&apos;
+          Made by SD'
         </footer>
       </div>
     </div>
+  );
+}
+
+export default function AppLayout({ children }: AppLayoutProps) {
+  return (
+    <Suspense fallback={<div style={{ color: '#999', padding: '20px' }}>Loading...</div>}>
+      <AppLayoutContent>{children}</AppLayoutContent>
+    </Suspense>
   );
 }

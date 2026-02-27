@@ -1,438 +1,512 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 
+type Provider = 'google' | 'openai' | 'anthropic' | 'fallback';
+type ProviderMode = 'google' | 'openai' | 'anthropic' | 'auto';
+
+interface CompanyDetails {
+  founded?: string;
+  employees?: string;
+  netWorth?: string;
+  founders?: string[];
+  headquarters?: string;
+  revenue?: string;
+  funding?: string;
+}
+
+interface SourceRef {
+  url: string;
+  timestamp: string;
+}
+
 interface EnrichmentResult {
   summary: string;
   whatTheyDo: string[];
   keywords: string[];
   signals: string[];
-  sources: { url: string; timestamp: string }[];
+  sources: SourceRef[];
   enrichedAt: string;
-  companyDetails?: {
-    founded?: string;
-    employees?: string;
-    netWorth?: string;
-    founders?: string[];
-    headquarters?: string;
-    revenue?: string;
-    funding?: string;
-  };
+  companyDetails?: CompanyDetails;
+  provider?: Provider;
   error?: string;
 }
 
-// Scrape website content using scraping API
-async function scrapeWebsite(url: string): Promise<string> {
-  try {
-    // Try direct fetch first (for sites that allow it)
+interface CachedEnrichment {
+  data: Omit<EnrichmentResult, 'enrichedAt'>;
+  timestamp: number;
+}
+
+const CACHE_DURATION_MS = 5 * 60 * 1000;
+const enrichmentCache = new Map<string, CachedEnrichment>();
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const ENRICHMENT_SCHEMA = `Return JSON only:
+{
+  "summary": "string",
+  "whatTheyDo": ["string"],
+  "keywords": ["string"],
+  "signals": ["string"],
+  "companyDetails": {
+    "founded": "string",
+    "employees": "string",
+    "netWorth": "string",
+    "founders": ["string"],
+    "headquarters": "string",
+    "revenue": "string",
+    "funding": "string"
+  },
+  "sources": [{"url":"string","timestamp":"ISO8601"}]
+}`;
+
+function getApiKeys(prefix: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE'): string[] {
+  const keys = new Set<string>();
+  const primary = process.env[`${prefix}_API_KEY`];
+  const secondary = process.env[`${prefix}_API_KEY_2`];
+  const list = process.env[`${prefix}_API_KEYS`];
+
+  if (typeof primary === 'string' && primary.trim()) keys.add(primary.trim());
+  if (typeof secondary === 'string' && secondary.trim()) keys.add(secondary.trim());
+  if (typeof list === 'string' && list.trim()) {
+    list
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .forEach((item) => keys.add(item));
+  }
+
+  return Array.from(keys);
+}
+
+function getGoogleModels(): string[] {
+  const configured = (process.env.GOOGLE_MODELS || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const primary =
+    process.env.GOOGLE_MODEL ||
+    process.env.GOOGLE_GEMINI_MODEL ||
+    '';
+
+  const defaults = [
+    'gemini-2.5-flash',
+    'gemini-flash-latest',
+    'gemini-2.5-flash-lite',
+    'gemini-2.0-flash'
+  ];
+
+  return Array.from(
+    new Set([primary, ...configured, ...defaults].filter(Boolean))
+  );
+}
+
+function normalizeUrl(rawUrl: string): string {
+  const parsed = new URL(rawUrl);
+  const blockedHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0']);
+  if (blockedHosts.has(parsed.hostname.toLowerCase())) {
+    throw new Error('Local URLs are not allowed');
+  }
+  return parsed.toString();
+}
+
+function companyNameFromUrl(url: string): string {
+  const domain = new URL(url).hostname.replace(/^www\./, '');
+  const name = domain.split('.')[0] || 'Company';
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+function buildPrompt(content: string, url: string): string {
+  const companyName = companyNameFromUrl(url);
+  return `You are a business intelligence analyst.
+Analyze the website content and provide factual company enrichment.
+Only use information present in the content. If unknown, use "Not specified" or "Not disclosed".
+
+Company: ${companyName}
+URL: ${url}
+
+${ENRICHMENT_SCHEMA}
+
+Website content:
+${content.slice(0, 12000)}`;
+}
+
+async function fetchWithRetry(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  retries = 2
+): Promise<Response> {
+  let attempt = 0;
+  let waitMs = 800;
+
+  while (true) {
+    const response = await fetch(input, init);
+    if (response.ok) return response;
+
+    const retriable = response.status === 429 || response.status >= 500;
+    if (!retriable || attempt >= retries) return response;
+
+    await sleep(waitMs);
+    attempt += 1;
+    waitMs *= 2;
+  }
+}
+
+function sanitizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 20);
+}
+
+function parseJsonObject(text: string): Record<string, unknown> {
+  const trimmed = text.trim();
+
+  const attemptParse = (candidate: string): Record<string, unknown> | null => {
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-      });
-
-      if (response.ok) {
-        const html = await response.text();
-        
-        // Parse and clean HTML content
-        const $ = cheerio.load(html);
-        
-        // Remove script, style, nav, footer elements
-        $('script, style, nav, footer, header, aside').remove();
-        
-        // Get main content
-        const title = $('title').text().trim();
-        const description = $('meta[name="description"]').attr('content') || '';
-        const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
-        
-        // Combine relevant content
-        const content = [
-          title,
-          description,
-          bodyText.substring(0, 3000) // Limit to first 3000 chars
-        ].filter(Boolean).join('\n\n');
-        
-        if (content.length > 200) {
-          return content;
-        }
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
       }
-    } catch (directFetchError) {
-      console.warn('Direct fetch failed, trying scraping API:', directFetchError);
-    }
-
-    // Fallback to scraping API
-    const scrapingApiKey = process.env.SCRAPING_API_KEY;
-    if (!scrapingApiKey) {
-      throw new Error('Scraping API key not configured');
-    }
-
-    const apiUrl = `http://api.scraperapi.com?api_key=${scrapingApiKey}&url=${encodeURIComponent(url)}`;
-    
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Scraping failed: ${response.status}`);
-    }
-
-    const html = await response.text();
-    
-    // Parse and clean HTML content
-    const $ = cheerio.load(html);
-    
-    // Remove script, style, nav, footer elements
-    $('script, style, nav, footer, header, aside').remove();
-    
-    // Get main content
-    const title = $('title').text().trim();
-    const description = $('meta[name="description"]').attr('content') || '';
-    const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
-    
-    // Combine relevant content
-    const content = [
-      title,
-      description,
-      bodyText.substring(0, 5000) // Limit to first 5000 chars
-    ].filter(Boolean).join('\n\n');
-    
-    return content;
-  } catch (error) {
-    console.error('Scraping error:', error);
-    throw error;
-  }
-}
-
-// Analyze content using OpenAI
-async function analyzeWithOpenAI(content: string, url: string): Promise<Omit<EnrichmentResult, 'enrichedAt'>> {
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  // Extract company name from URL for better context
-  const domain = new URL(url).hostname.replace('www.', '');
-  const companyName = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
-
-  const prompt = `
-You are a business intelligence analyst specializing in company research and analysis. Analyze the following website content for ${companyName} and extract comprehensive, company-specific information.
-
-Company: ${companyName}
-URL: ${url}
-
-Content:
-${content}
-
-Provide a detailed JSON analysis focusing on THIS SPECIFIC COMPANY. Do not use generic templates. Extract actual information from the content:
-
-{
-  "summary": "Specific summary of what ${companyName} does based on their website content",
-  "whatTheyDo": [
-    "Specific business model of ${companyName}",
-    "Main products/services offered by ${companyName}",
-    "Target market and customers of ${companyName}",
-    "Key technologies or innovations used by ${companyName}",
-    "Competitive advantages of ${companyName}"
-  ],
-  "keywords": ["specific", "keywords", "related", "to", "${companyName}", "business", "industry", "focus"],
-  "signals": [
-    "Specific market position signal for ${companyName}",
-    "Growth indicator specific to ${companyName}",
-    "Industry trend relevant to ${companyName}",
-    "Business strength of ${companyName}"
-  ],
-  "companyDetails": {
-    "founded": "Actual founding year if found in content, otherwise 'Not specified'",
-    "employees": "Employee count if mentioned, otherwise 'Not disclosed'",
-    "netWorth": "Valuation or financial information if found, otherwise 'Not disclosed'",
-    "founders": ["Actual founder names if found", "Additional founders if mentioned"],
-    "headquarters": "Headquarters location if specified, otherwise 'Not specified'",
-    "revenue": "Revenue information if mentioned, otherwise 'Not disclosed'",
-    "funding": "Funding details if available, otherwise 'Not disclosed'"
-  },
-  "sources": [{"url": "${url}", "timestamp": "2024-01-01T00:00:00Z"}]
-}
-
-CRITICAL REQUIREMENTS:
-1. Be specific to ${companyName} - do not use generic responses
-2. Only include information actually found in the content
-3. If information is not available, use 'Not specified' or 'Not disclosed'
-4. Focus on accurate, factual information from the website
-5. Provide real insights specific to this company's business
-
-Respond only with valid JSON, no additional text.
-`;
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a business analyst expert at extracting key insights from company websites. Always respond with valid JSON.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_tokens: 1000,
-      temperature: 0.3
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const contentResult = data.choices[0]?.message?.content;
-  
-  if (!contentResult) {
-    throw new Error('No content received from OpenAI');
-  }
-
-  try {
-    const parsed = JSON.parse(contentResult);
-    return {
-      summary: parsed.summary || 'No summary available',
-      whatTheyDo: Array.isArray(parsed.whatTheyDo) ? parsed.whatTheyDo : ['No description available'],
-      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
-      signals: Array.isArray(parsed.signals) ? parsed.signals : [],
-      sources: Array.isArray(parsed.sources) ? parsed.sources : [{ url, timestamp: new Date().toISOString() }]
-    };
-  } catch (parseError) {
-    console.error('JSON parsing error:', parseError);
-    throw new Error('Failed to parse AI response');
-  }
-}
-
-// Analyze content using Anthropic Claude (fallback)
-async function analyzeWithAnthropic(content: string, url: string): Promise<Omit<EnrichmentResult, 'enrichedAt'>> {
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  if (!anthropicKey) {
-    throw new Error('Anthropic API key not configured');
-  }
-
-  // Extract company name from URL for better context
-  const domain = new URL(url).hostname.replace('www.', '');
-  const companyName = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
-
-  const prompt = `You are a business intelligence analyst specializing in company research and analysis. Analyze the following website content for ${companyName} and extract comprehensive, company-specific information.
-
-Company: ${companyName}
-URL: ${url}
-
-Content:
-${content}
-
-Provide a detailed JSON analysis focusing on THIS SPECIFIC COMPANY. Do not use generic templates. Extract actual information from the content:
-
-{
-  "summary": "Specific summary of what ${companyName} does based on their website content",
-  "whatTheyDo": [
-    "Specific business model of ${companyName}",
-    "Main products/services offered by ${companyName}",
-    "Target market and customers of ${companyName}",
-    "Key technologies or innovations used by ${companyName}",
-    "Competitive advantages of ${companyName}"
-  ],
-  "keywords": ["specific", "keywords", "related", "to", "${companyName}", "business", "industry", "focus"],
-  "signals": [
-    "Specific market position signal for ${companyName}",
-    "Growth indicator specific to ${companyName}",
-    "Industry trend relevant to ${companyName}",
-    "Business strength of ${companyName}"
-  ],
-  "companyDetails": {
-    "founded": "Actual founding year if found in content, otherwise 'Not specified'",
-    "employees": "Employee count if mentioned, otherwise 'Not disclosed'",
-    "netWorth": "Valuation or financial information if found, otherwise 'Not disclosed'",
-    "founders": ["Actual founder names if found", "Additional founders if mentioned"],
-    "headquarters": "Headquarters location if specified, otherwise 'Not specified'",
-    "revenue": "Revenue information if mentioned, otherwise 'Not disclosed'",
-    "funding": "Funding details if available, otherwise 'Not disclosed'"
-  },
-  "sources": [{"url": "${url}", "timestamp": "2024-01-01T00:00:00Z"}]
-}
-
-CRITICAL REQUIREMENTS:
-1. Be specific to ${companyName} - do not use generic responses
-2. Only include information actually found in the content
-3. If information is not available, use 'Not specified' or 'Not disclosed'
-4. Focus on accurate, factual information from the website
-5. Provide real insights specific to this company's business
-
-Respond only with valid JSON, no additional text.`;
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': anthropicKey,
-      'Content-Type': 'application/json',
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 1000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`Anthropic API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const contentResult = data.content[0]?.text;
-  
-  if (!contentResult) {
-    throw new Error('No content received from Anthropic');
-  }
-
-  try {
-    const parsed = JSON.parse(contentResult);
-    return {
-      summary: parsed.summary || 'No summary available',
-      whatTheyDo: Array.isArray(parsed.whatTheyDo) ? parsed.whatTheyDo : ['No description available'],
-      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
-      signals: Array.isArray(parsed.signals) ? parsed.signals : [],
-      sources: Array.isArray(parsed.sources) ? parsed.sources : [{ url, timestamp: new Date().toISOString() }]
-    };
-  } catch (parseError) {
-    console.error('JSON parsing error:', parseError);
-    throw new Error('Failed to parse AI response');
-  }
-}
-
-// Fallback mock enrichment when APIs fail
-function getMockEnrichment(url: string, companyName: string): Omit<EnrichmentResult, 'enrichedAt'> {
-  const domain = new URL(url).hostname.replace('www.', '');
-  
-  // Create more specific mock data based on common company patterns
-  const mockData: Record<string, Omit<EnrichmentResult, 'enrichedAt'>> = {
-    'openai': {
-      summary: 'OpenAI is a late stage AI research company based in San Francisco, CA. Founded in 2017, they have grown to 1000-5000 employees. Artificial intelligence research company developing advanced AI models and technologies.',
-      whatTheyDo: [
-        'Provides AI research solutions for businesses',
-        'Operates a SaaS platform with 1000-5000 employees',
-        'Has raised $13B+ in their latest round',
-        'Focuses on innovation in the AI space',
-        'Develops cutting-edge machine learning technologies'
-      ],
-      keywords: ['artificial intelligence', 'machine learning', 'GPT', 'AI research', 'deep learning', 'neural networks', 'AGI', 'innovation'],
-      signals: [
-        'Late Stage company with strong funding trajectory',
-        'Active in competitive AI market',
-        'Leading technology development in AI space',
-        'Strong growth and market position'
-      ],
-      companyDetails: {
-        founded: '2015',
-        employees: '1000-5000',
-        netWorth: '$80-90 billion valuation',
-        founders: ['Sam Altman', 'Greg Brockman', 'Ilya Sutskever', 'John Schulman', 'Wojciech Zaremba'],
-        headquarters: 'San Francisco, California',
-        revenue: 'Not disclosed',
-        funding: '$13 billion+ in funding'
-      },
-      sources: [{ url, timestamp: new Date().toISOString() }]
-    },
-    'stripe': {
-      summary: 'Stripe is a late stage fintech company based in San Francisco, CA. Founded in 2010, they have grown to 5000+ employees. Financial technology company that provides payment processing and economic infrastructure for internet businesses.',
-      whatTheyDo: [
-        'Provides payment processing solutions for businesses',
-        'Operates a SaaS platform with 5000+ employees',
-        'Has raised $2.2B+ in their latest round',
-        'Focuses on innovation in the fintech space',
-        'Offers developer-friendly payment APIs'
-      ],
-      keywords: ['payments', 'fintech', 'API', 'e-commerce', 'financial services', 'payment processing', 'merchant services', 'banking', 'growth'],
-      signals: [
-        'Late Stage company with strong funding trajectory',
-        'Active in competitive fintech market',
-        'Leading payment processing technology',
-        'Strong market adoption and growth'
-      ],
-      companyDetails: {
-        founded: '2010',
-        employees: '5000+',
-        netWorth: '$50-95 billion valuation',
-        founders: ['Patrick Collison', 'John Collison'],
-        headquarters: 'San Francisco, California & Dublin, Ireland',
-        revenue: '$14+ billion annual revenue',
-        funding: '$2.2+ billion in funding'
-      },
-      sources: [{ url, timestamp: new Date().toISOString() }]
-    },
-    'anduril': {
-      summary: 'Anduril is a late stage defense tech company based in Costa Mesa, CA. Founded in 2017, they have grown to 1000-5000 employees. Defense technology company building autonomous systems.',
-      whatTheyDo: [
-        'Provides defense tech solutions for businesses',
-        'Operates a SaaS platform with 1000-5000 employees',
-        'Has raised $1.5B Series F in their latest round',
-        'Focuses on innovation in the defense tech space',
-        'Builds autonomous military systems'
-      ],
-      keywords: ['defense', 'ai', 'hardware', 'defense tech', 'growth', 'innovation', 'autonomous systems', 'military technology'],
-      signals: [
-        'Late Stage company with strong funding trajectory',
-        'Active in competitive Defense Tech market',
-        'Leading autonomous systems development',
-        'Strong government contracts and partnerships'
-      ],
-      companyDetails: {
-        founded: '2017',
-        employees: '1000-5000',
-        netWorth: '$8-10 billion valuation',
-        founders: ['Palmer Luckey'],
-        headquarters: 'Costa Mesa, California',
-        revenue: 'Not disclosed',
-        funding: '$1.5 billion Series F'
-      },
-      sources: [{ url, timestamp: new Date().toISOString() }]
+      return null;
+    } catch {
+      return null;
     }
   };
 
-  // Try to match domain to known companies, otherwise use generic
-  const domainKey = domain.split('.')[0].toLowerCase();
-  const specificMock = mockData[domainKey];
-  
-  if (specificMock) {
-    return specificMock;
+  // 1) Direct parse.
+  const direct = attemptParse(trimmed);
+  if (direct) return direct;
+
+  // 2) Extract from fenced code blocks.
+  const codeBlockMatches = Array.from(trimmed.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi));
+  for (const match of codeBlockMatches) {
+    const block = match[1]?.trim();
+    if (!block) continue;
+    const parsed = attemptParse(block);
+    if (parsed) return parsed;
   }
-  
-  // Generic fallback
+
+  // 3) Try every balanced JSON object substring.
+  for (let start = 0; start < trimmed.length; start += 1) {
+    if (trimmed[start] !== '{') continue;
+
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+
+    for (let end = start; end < trimmed.length; end += 1) {
+      const ch = trimmed[end];
+
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = !inString;
+        continue;
+      }
+      if (inString) continue;
+
+      if (ch === '{') depth += 1;
+      if (ch === '}') depth -= 1;
+
+      if (depth === 0) {
+        const candidate = trimmed.slice(start, end + 1);
+        const parsed = attemptParse(candidate);
+        if (parsed) return parsed;
+        break;
+      }
+    }
+  }
+
+  throw new Error('Model response is not valid JSON');
+}
+
+function normalizeResult(parsed: Record<string, unknown>, url: string, provider: Provider): Omit<EnrichmentResult, 'enrichedAt'> {
+  const detailsRaw = parsed.companyDetails as Record<string, unknown> | undefined;
+
+  const companyDetails: CompanyDetails | undefined = detailsRaw
+    ? {
+        founded: typeof detailsRaw.founded === 'string' ? detailsRaw.founded : undefined,
+        employees: typeof detailsRaw.employees === 'string' ? detailsRaw.employees : undefined,
+        netWorth: typeof detailsRaw.netWorth === 'string' ? detailsRaw.netWorth : undefined,
+        founders: sanitizeStringArray(detailsRaw.founders),
+        headquarters: typeof detailsRaw.headquarters === 'string' ? detailsRaw.headquarters : undefined,
+        revenue: typeof detailsRaw.revenue === 'string' ? detailsRaw.revenue : undefined,
+        funding: typeof detailsRaw.funding === 'string' ? detailsRaw.funding : undefined
+      }
+    : undefined;
+
+  const sourcesRaw = Array.isArray(parsed.sources) ? parsed.sources : [];
+  const sources: SourceRef[] = sourcesRaw
+    .map((source) => {
+      if (!source || typeof source !== 'object') return null;
+      const urlValue = (source as Record<string, unknown>).url;
+      const timestampValue = (source as Record<string, unknown>).timestamp;
+      if (typeof urlValue !== 'string') return null;
+      return {
+        url: urlValue,
+        timestamp: typeof timestampValue === 'string' ? timestampValue : new Date().toISOString()
+      };
+    })
+    .filter((item): item is SourceRef => item !== null);
+
   return {
-    summary: `${companyName} is a late stage technology company based in the digital space, focused on innovation and growth. Founded in recent years, they have grown to a significant team size.`,
-    whatTheyDo: [
-      `Provides technology solutions for businesses`,
-      `Operates a SaaS platform with growing team`,
-      `Has raised significant funding in recent rounds`,
-      `Focuses on innovation in the technology space`,
-      `Builds cutting-edge digital solutions`
-    ],
-    keywords: ['technology', 'innovation', 'digital', 'platform', 'services', 'growth', 'saas', 'startup'],
-    signals: [
-      'Late Stage company with strong funding trajectory',
-      'Active in competitive technology market',
-      'Leading digital innovation',
-      'Strong growth and market position'
-    ],
+    summary: typeof parsed.summary === 'string' ? parsed.summary : 'No summary available',
+    whatTheyDo: sanitizeStringArray(parsed.whatTheyDo),
+    keywords: sanitizeStringArray(parsed.keywords),
+    signals: sanitizeStringArray(parsed.signals),
+    companyDetails,
+    sources: sources.length > 0 ? sources : [{ url, timestamp: new Date().toISOString() }],
+    provider
+  };
+}
+
+async function extractHttpError(response: Response, provider: Provider): Promise<Error> {
+  let details = '';
+  try {
+    const body = await response.text();
+    if (body) details = body.slice(0, 600);
+  } catch {
+    details = '';
+  }
+  const suffix = details ? ` - ${details}` : '';
+  return new Error(`${provider.toUpperCase()} API error ${response.status}${suffix}`);
+}
+
+async function analyzeWithOpenAI(content: string, url: string): Promise<Omit<EnrichmentResult, 'enrichedAt'>> {
+  const apiKeys = getApiKeys('OPENAI');
+  if (apiKeys.length === 0) throw new Error('OPENAI_API_KEY is not configured');
+
+  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  const prompt = buildPrompt(content, url);
+  let lastError: Error | null = null;
+
+  for (const apiKey of apiKeys) {
+    const response = await fetchWithRetry(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          response_format: { type: 'json_object' },
+          messages: [
+            {
+              role: 'system',
+              content: 'You extract factual company intelligence from website text. Return JSON only.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: 1200
+        })
+      },
+      2
+    );
+
+    if (!response.ok) {
+      lastError = await extractHttpError(response, 'openai');
+      continue;
+    }
+
+    const data = await response.json();
+    const text = data?.choices?.[0]?.message?.content;
+    if (typeof text !== 'string' || text.trim().length === 0) {
+      lastError = new Error('OPENAI returned empty content');
+      continue;
+    }
+
+    return normalizeResult(parseJsonObject(text), url, 'openai');
+  }
+
+  throw lastError || new Error('OPENAI request failed');
+}
+
+async function analyzeWithGoogle(content: string, url: string): Promise<Omit<EnrichmentResult, 'enrichedAt'>> {
+  const apiKeys = getApiKeys('GOOGLE');
+  if (apiKeys.length === 0) throw new Error('GOOGLE_API_KEY is not configured');
+
+  const models = getGoogleModels();
+  const prompt = buildPrompt(content, url);
+  let lastError: Error | null = null;
+
+  for (const apiKey of apiKeys) {
+    for (const model of models) {
+      const response = await fetchWithRetry(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt
+                  }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 1200,
+              responseMimeType: 'application/json'
+            }
+          })
+        },
+        2
+      );
+
+      if (!response.ok) {
+        lastError = await extractHttpError(response, 'google');
+        // Try next model when current model is unavailable/deprecated.
+        if (response.status === 404) {
+          continue;
+        }
+        // For non-404 errors, still allow trying next model/key.
+        continue;
+      }
+
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (typeof text !== 'string' || text.trim().length === 0) {
+        lastError = new Error(`GOOGLE returned empty content for model ${model}`);
+        continue;
+      }
+
+      return normalizeResult(parseJsonObject(text), url, 'google');
+    }
+  }
+
+  throw lastError || new Error('GOOGLE request failed');
+}
+
+async function analyzeWithAnthropic(content: string, url: string): Promise<Omit<EnrichmentResult, 'enrichedAt'>> {
+  const apiKeys = getApiKeys('ANTHROPIC');
+  if (apiKeys.length === 0) throw new Error('ANTHROPIC_API_KEY is not configured');
+
+  const model = process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
+  const prompt = buildPrompt(content, url);
+  let lastError: Error | null = null;
+
+  for (const apiKey of apiKeys) {
+    const response = await fetchWithRetry(
+      'https://api.anthropic.com/v1/messages',
+      {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1200,
+          temperature: 0.2,
+          messages: [
+            {
+              role: 'user',
+              content: [{ type: 'text', text: prompt }]
+            }
+          ]
+        })
+      },
+      2
+    );
+
+    if (!response.ok) {
+      lastError = await extractHttpError(response, 'anthropic');
+      continue;
+    }
+
+    const data = await response.json();
+    const text = data?.content?.find((item: { type?: string }) => item.type === 'text')?.text;
+    if (typeof text !== 'string' || text.trim().length === 0) {
+      lastError = new Error('ANTHROPIC returned empty content');
+      continue;
+    }
+
+    return normalizeResult(parseJsonObject(text), url, 'anthropic');
+  }
+
+  throw lastError || new Error('ANTHROPIC request failed');
+}
+
+async function scrapeWebsite(url: string): Promise<string> {
+  const readContent = async (html: string): Promise<string> => {
+    const $ = cheerio.load(html);
+    $('script, style, nav, footer, header, aside').remove();
+    const title = $('title').text().trim();
+    const description = $('meta[name="description"]').attr('content') || '';
+    const body = $('body').text().replace(/\s+/g, ' ').trim();
+    return [title, description, body.slice(0, 12000)].filter(Boolean).join('\n\n');
+  };
+
+  try {
+    const direct = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      }
+    });
+    if (direct.ok) {
+      const directHtml = await direct.text();
+      const directContent = await readContent(directHtml);
+      if (directContent.length >= 200) return directContent;
+    }
+  } catch {
+    // Continue to scraper fallback.
+  }
+
+  const scrapingApiKey = process.env.SCRAPING_API_KEY;
+  if (!scrapingApiKey) {
+    throw new Error('SCRAPING_API_KEY is not configured and direct fetch failed');
+  }
+
+  const scrapeApi = `http://api.scraperapi.com?api_key=${scrapingApiKey}&url=${encodeURIComponent(url)}`;
+  const scraped = await fetch(scrapeApi, {
+    method: 'GET',
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    }
+  });
+
+  if (!scraped.ok) {
+    throw new Error(`Scraping failed with status ${scraped.status}`);
+  }
+
+  const html = await scraped.text();
+  const content = await readContent(html);
+  if (content.length < 120) {
+    throw new Error('Insufficient scraped content');
+  }
+  return content;
+}
+
+function getFallbackEnrichment(url: string): Omit<EnrichmentResult, 'enrichedAt'> {
+  const companyName = companyNameFromUrl(url);
+  const timestamp = new Date().toISOString();
+
+  return {
+    summary: `${companyName} website was reachable, but live model analysis is temporarily unavailable.`,
+    whatTheyDo: ['Live AI analysis unavailable for this request.'],
+    keywords: [companyName.toLowerCase(), 'analysis-unavailable'],
+    signals: ['Provider rate limit or credentials issue'],
     companyDetails: {
       founded: 'Not specified',
       employees: 'Not disclosed',
@@ -442,57 +516,115 @@ function getMockEnrichment(url: string, companyName: string): Omit<EnrichmentRes
       revenue: 'Not disclosed',
       funding: 'Not disclosed'
     },
-    sources: [{ url, timestamp: new Date().toISOString() }]
+    sources: [{ url, timestamp }],
+    provider: 'fallback',
+    error: 'Live AI providers unavailable'
   };
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url } = body;
+    const urlInput = body?.url;
+    const forceRefresh = Boolean(body?.forceRefresh);
+    const providerModeRaw = typeof body?.provider === 'string' ? body.provider.toLowerCase() : '';
+    const envProviderRaw = (process.env.ENRICHMENT_PROVIDER || '').toLowerCase();
+    const normalizeProviderMode = (value: string): ProviderMode | null => {
+      if (value === 'google' || value === 'gemini') return 'google';
+      if (value === 'openai') return 'openai';
+      if (value === 'anthropic') return 'anthropic';
+      return null;
+    };
+    const providerMode: ProviderMode =
+      normalizeProviderMode(providerModeRaw) ||
+      normalizeProviderMode(envProviderRaw) ||
+      'google';
 
-    if (!url || typeof url !== 'string') {
-      return NextResponse.json(
-        { error: 'Valid URL is required' },
-        { status: 400 }
-      );
+    if (typeof urlInput !== 'string' || !urlInput.trim()) {
+      return NextResponse.json({ error: 'Valid URL is required' }, { status: 400 });
     }
 
-    // Validate URL format
+    let url: string;
     try {
-      new URL(url);
-    } catch {
+      url = normalizeUrl(urlInput.trim());
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Invalid URL format' },
+        { error: error instanceof Error ? error.message : 'Invalid URL format' },
         { status: 400 }
       );
     }
 
-    // Scrape website content
+    const cached = enrichmentCache.get(url);
+    if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_DURATION_MS) {
+      return NextResponse.json({
+        ...cached.data,
+        enrichedAt: new Date().toISOString()
+      } as EnrichmentResult);
+    }
+
     const content = await scrapeWebsite(url);
-    
-    if (!content || content.trim().length < 100) {
-      return NextResponse.json(
-        { error: 'Insufficient content to analyze' },
-        { status: 400 }
-      );
-    }
 
-    // Try OpenAI first, fallback to Anthropic, then mock data
-    let analysis: Omit<EnrichmentResult, 'enrichedAt'>;
-    
-    try {
-      analysis = await analyzeWithOpenAI(content, url);
-    } catch (openaiError) {
-      console.warn('OpenAI failed, trying Anthropic:', openaiError);
+    let analysis: Omit<EnrichmentResult, 'enrichedAt'> | null = null;
+    let openaiError: Error | null = null;
+    let anthropicError: Error | null = null;
+    let googleError: Error | null = null;
+
+    if (providerMode === 'openai') {
+      try {
+        analysis = await analyzeWithOpenAI(content, url);
+      } catch (error) {
+        openaiError = error instanceof Error ? error : new Error(String(error));
+      }
+    } else if (providerMode === 'anthropic') {
       try {
         analysis = await analyzeWithAnthropic(content, url);
-      } catch (anthropicError) {
-        console.warn('Both AI services failed, using mock data:', { openaiError, anthropicError });
-        // Extract company name from URL for mock data
-        const companyName = new URL(url).hostname.replace('www.', '').split('.')[0];
-        analysis = getMockEnrichment(url, companyName.charAt(0).toUpperCase() + companyName.slice(1));
+      } catch (error) {
+        anthropicError = error instanceof Error ? error : new Error(String(error));
       }
+    } else if (providerMode === 'google') {
+      try {
+        analysis = await analyzeWithGoogle(content, url);
+      } catch (error) {
+        googleError = error instanceof Error ? error : new Error(String(error));
+      }
+    } else {
+      // Auto mode: Try Google, then OpenAI, then Anthropic.
+      try {
+        analysis = await analyzeWithGoogle(content, url);
+      } catch (error) {
+        googleError = error instanceof Error ? error : new Error(String(error));
+      }
+
+      if (!analysis) {
+        try {
+          analysis = await analyzeWithOpenAI(content, url);
+        } catch (error) {
+          openaiError = error instanceof Error ? error : new Error(String(error));
+        }
+      }
+
+      if (!analysis) {
+        try {
+          analysis = await analyzeWithAnthropic(content, url);
+        } catch (error) {
+          anthropicError = error instanceof Error ? error : new Error(String(error));
+        }
+      }
+    }
+
+    if (!analysis) {
+      console.warn('Live enrichment failed', {
+        providerMode,
+        google: googleError?.message,
+        openai: openaiError?.message,
+        anthropic: anthropicError?.message
+      });
+      const fallback = getFallbackEnrichment(url);
+      const reasons = [googleError?.message, openaiError?.message, anthropicError?.message].filter(Boolean).join(' | ');
+      analysis = {
+        ...fallback,
+        error: reasons ? `Live AI providers unavailable: ${reasons}` : fallback.error
+      };
     }
 
     const result: EnrichmentResult = {
@@ -500,12 +632,18 @@ export async function POST(request: NextRequest) {
       enrichedAt: new Date().toISOString()
     };
 
-    return NextResponse.json(result);
+    // Cache only live provider results; do not cache fallback failures.
+    if (analysis.provider !== 'fallback') {
+      enrichmentCache.set(url, {
+        data: analysis,
+        timestamp: Date.now()
+      });
+    }
 
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Enrichment API error:', error);
     return NextResponse.json(
-      { 
+      {
         error: error instanceof Error ? error.message : 'Unknown error occurred',
         enrichedAt: new Date().toISOString()
       },
@@ -515,8 +653,5 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  );
+  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }

@@ -48,13 +48,20 @@ components/
 npm install
 ```
 
-2. Create `.env.local` in the project root and add any keys you need:
+2. Create `.env.local` in the project root and add required keys:
 
 ```env
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
+GOOGLE_API_KEY=
+GOOGLE_MODEL=gemini-1.5-flash
+ENRICHMENT_PROVIDER=google
 SCRAPING_API_KEY=
-NEXT_PUBLIC_CRUNCHBASE_API_KEY=
+```
+
+Optional fallbacks:
+
+```env
+GOOGLE_API_KEY_2=
+GOOGLE_API_KEYS=
 ```
 
 3. Start development server:

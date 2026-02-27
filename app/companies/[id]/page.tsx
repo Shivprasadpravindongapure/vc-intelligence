@@ -10,20 +10,6 @@ import {
   createList 
 } from '@/lib/listManager';
 
-type ReEnrichmentData = {
-  employees?: number;
-  founded?: string;
-  headquarters?: string;
-  valuation?: string;
-  funding?: string;
-  businessModel?: string;
-  targetMarket?: string;
-  technologies?: string[];
-  competitors?: string[];
-  market?: string;
-  financials?: Company['financials'];
-};
-
 export default function CompanyProfilePage() {
   const params = useParams();
   const router = useRouter();
@@ -36,7 +22,6 @@ export default function CompanyProfilePage() {
   const [newListName, setNewListName] = useState('');
   const [notes, setNotes] = useState('');
   const [noteStatus, setNoteStatus] = useState('');
-  const [isReEnriching, setIsReEnriching] = useState(false);
   const notesStorageKey = `vc-notes-${companyId}`;
 
   useEffect(() => {
@@ -54,65 +39,6 @@ export default function CompanyProfilePage() {
     if (typeof window === 'undefined') return;
     localStorage.setItem(notesStorageKey, notes);
     setNoteStatus('Notes saved');
-  };
-
-  // Handle re-enrichment with real-time data
-  const handleReEnrich = async () => {
-    if (!company) return;
-    
-    setIsReEnriching(true);
-    try {
-      // Simulate real-time data fetching
-      const enrichedData = await fetchRealTimeEnrichment();
-      
-      // Update company with new data
-      setCompany({
-        ...company,
-        employees: enrichedData.employees || company.employees,
-        founded: enrichedData.founded || company.founded,
-        headquarters: enrichedData.headquarters || company.headquarters,
-        valuation: enrichedData.valuation || company.valuation,
-        funding: enrichedData.funding || company.funding,
-        businessModel: enrichedData.businessModel || company.businessModel,
-        targetMarket: enrichedData.targetMarket || company.targetMarket,
-        technologies: enrichedData.technologies || company.technologies,
-        competitors: enrichedData.competitors || company.competitors,
-        market: enrichedData.market || company.market,
-        financials: enrichedData.financials || company.financials
-      });
-    } catch (error) {
-      console.error('Re-enrichment failed:', error);
-    } finally {
-      setIsReEnriching(false);
-    }
-  };
-
-  // Fetch real-time enrichment data
-  const fetchRealTimeEnrichment = async (): Promise<ReEnrichmentData> => {
-    // Simulate API call with real-time data
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          employees: Math.floor(Math.random() * 10000) + 100,
-          founded: (2010 + Math.floor(Math.random() * 14)).toString(),
-          headquarters: ['San Francisco', 'New York', 'London', 'Berlin', 'Tokyo', 'Singapore'][Math.floor(Math.random() * 6)],
-          valuation: '$' + (Math.floor(Math.random() * 10) + 1) + 'B',
-          funding: '$' + (Math.floor(Math.random() * 500) + 50) + 'M',
-          businessModel: ['SaaS', 'Marketplace', 'Platform', 'Direct-to-Consumer', 'B2B'][Math.floor(Math.random() * 5)],
-          targetMarket: ['Enterprise', 'SMB', 'Consumer', 'Developer', 'Healthcare'][Math.floor(Math.random() * 5)],
-          technologies: ['AI', 'Machine Learning', 'Cloud', 'Blockchain', 'IoT', 'AR/VR'].slice(0, Math.floor(Math.random() * 4) + 2),
-          competitors: ['Google', 'Microsoft', 'Amazon', 'Apple', 'Meta'].slice(0, Math.floor(Math.random() * 3) + 1),
-          market: 'Global',
-          financials: {
-            totalFunding: '$' + (Math.floor(Math.random() * 500) + 50) + 'M',
-            lastRound: '$' + (Math.floor(Math.random() * 100) + 10) + 'M',
-            valuation: '$' + (Math.floor(Math.random() * 10) + 1) + 'B',
-            revenue: '$' + (Math.floor(Math.random() * 100) + 10) + 'M',
-            burnRate: '$' + (Math.floor(Math.random() * 10) + 1) + 'M/month'
-          }
-        });
-      }, 2000); // Simulate 2-second API call
-    });
   };
 
   const handleCreateList = () => {
@@ -135,6 +61,8 @@ export default function CompanyProfilePage() {
     try {
       addCompanyToList(listId, company.id);
       setLists(getLists());
+      setShowListModal(false);
+      setNewListName('');
     } catch (error) {
       console.error('Error adding to list:', error);
     }
@@ -156,19 +84,19 @@ export default function CompanyProfilePage() {
         `Operates in ${company.market} market`,
         `Currently at ${company.stage} funding stage`,
         `Headquartered in ${company.headquarters}`,
-        `Competes with ${company.competitors.slice(0, 2).join(' and ')}`
+        `Competes with ${company.competitors.slice(0, 2).join(' and ')}` 
       ],
-      keywords: [...company.technologies, ...company.competitors, company.industry, company.stage, company.targetMarket],
+      keywords: [...company.technologies, ...company.competitors, company.industry, company.targetMarket],
       derivedSignals: [
         'Careers page indicates active hiring',
-        'Recent blog posts show product updates', 
+        'Recent blog posts show product updates',
         'Changelog suggests active development',
         'Multiple funding rounds completed'
       ],
       sources: [
-        `https://www.crunchbase.com/organization/${company.name.toLowerCase()}`,
-        `https://www.linkedin.com/company/${company.name.toLowerCase()}`,
-        company.website
+        { url: `https://www.crunchbase.com/organization/${company.name.toLowerCase()}`, timestamp: new Date().toISOString() },
+        { url: `https://www.linkedin.com/company/${company.name.toLowerCase()}`, timestamp: new Date().toISOString() },
+        { url: company.website, timestamp: new Date().toISOString() }
       ],
       scrapedAt: new Date().toISOString()
     };
@@ -177,7 +105,7 @@ export default function CompanyProfilePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${company.name.toLowerCase().replace(/\s+/g, '_')}_enrichment.json`;
+    a.download = `${company.name.toLowerCase().replace(/\s+/g, '_')}_company_data.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -208,22 +136,22 @@ export default function CompanyProfilePage() {
     `Operates in ${company.market} market`,
     `Currently at ${company.stage} funding stage`,
     `Headquartered in ${company.headquarters}`,
-    `Competes with ${company.competitors.slice(0, 2).join(' and ')}`
+    `Competes with ${company.competitors.slice(0, 2).join(' and ')}` 
   ];
 
-  const keywords = [...company.technologies, ...company.competitors, company.industry, company.stage, company.targetMarket];
+  const keywords = [...company.technologies, ...company.competitors, company.industry, company.targetMarket];
 
   const derivedSignals = [
     'Careers page indicates active hiring',
-    'Recent blog posts show product updates', 
+    'Recent blog posts show product updates',
     'Changelog suggests active development',
     'Multiple funding rounds completed'
   ];
 
   const sources = [
-    `https://www.crunchbase.com/organization/${company.name.toLowerCase()}`,
-    `https://www.linkedin.com/company/${company.name.toLowerCase()}`,
-    company.website
+    { url: `https://www.crunchbase.com/organization/${company.name.toLowerCase()}`, timestamp: new Date().toISOString() },
+    { url: `https://www.linkedin.com/company/${company.name.toLowerCase()}`, timestamp: new Date().toISOString() },
+    { url: company.website, timestamp: new Date().toISOString() }
   ];
 
   return (
@@ -238,13 +166,6 @@ export default function CompanyProfilePage() {
         </button>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={handleReEnrich}
-            disabled={isReEnriching}
-            style={{ backgroundColor: isReEnriching ? '#555' : '#333', color: 'white', padding: '6px 12px', border: '1px solid #444', borderRadius: '4px', cursor: isReEnriching ? 'not-allowed' : 'pointer' }}
-          >
-            {isReEnriching ? 'Re-Enriching...' : 'Re-Enrich'}
-          </button>
           <button
             onClick={handleExport}
             style={{ backgroundColor: '#333', color: 'white', padding: '6px 12px', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
@@ -296,9 +217,9 @@ export default function CompanyProfilePage() {
       <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>What They Do</h2>
         <ul style={{ listStyle: 'none', padding: '0', margin: '0', color: '#ccc', fontSize: '14px' }}>
-          {whatTheyDo.map((item, index) => (
+          {whatTheyDo.map((item: string, index: number) => (
             <li key={index} style={{ marginBottom: '5px', display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
-              <span style={{ color: '#666', marginTop: '2px' }}>•</span>
+              <span style={{ color: '#666', marginTop: '2px' }}>*</span>
               <span>{item}</span>
             </li>
           ))}
@@ -309,7 +230,7 @@ export default function CompanyProfilePage() {
       <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Keywords</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-          {keywords.map((keyword, index) => (
+          {keywords.map((keyword: string, index: number) => (
             <span key={index} style={{ backgroundColor: '#222', color: '#ccc', padding: '2px 6px', borderRadius: '3px', fontSize: '12px' }}>
               {keyword}
             </span>
@@ -321,9 +242,9 @@ export default function CompanyProfilePage() {
       <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Derived Signals</h2>
         <ul style={{ listStyle: 'none', padding: '0', margin: '0', color: '#ccc', fontSize: '14px' }}>
-          {derivedSignals.map((signal, index) => (
+          {derivedSignals.map((signal: string, index: number) => (
             <li key={index} style={{ marginBottom: '5px', display: 'flex', alignItems: 'flex-start', gap: '5px' }}>
-              <span style={{ color: '#666', marginTop: '2px' }}>•</span>
+              <span style={{ color: '#666', marginTop: '2px' }}>*</span>
               <span>{signal}</span>
             </li>
           ))}
@@ -333,97 +254,146 @@ export default function CompanyProfilePage() {
       {/* Sources */}
       <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Sources</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '14px' }}>
-          {sources.map((source, index) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {sources.map((source: { url: string; timestamp: string }, index: number) => (
             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <div style={{ width: '12px', height: '12px', backgroundColor: '#222', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}></div>
               <a 
-                href={source} 
+                href={source.url} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 style={{ color: '#ccc', textDecoration: 'underline' }}
               >
-                {source}
+                {source.url}
               </a>
             </div>
           ))}
-          <div style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-            Scraped at: {new Date().toLocaleString()}
+          <div style={{ marginTop: '10px', color: '#666', fontSize: '12px' }}>
+            Scraped at: {new Date(sources[0]?.timestamp || Date.now()).toLocaleString()}
           </div>
         </div>
       </div>
 
       {/* Notes Section */}
-      <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px' }}>
+      <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '15px', marginBottom: '15px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Notes</h2>
         <textarea
           value={notes}
-          onChange={(e) => {
-            setNotes(e.target.value);
-            setNoteStatus('');
-          }}
+          onChange={(e) => setNotes(e.target.value)}
           placeholder="Add your notes about this company..."
-          style={{ width: '100%', padding: '8px', backgroundColor: '#222', border: '1px solid #444', borderRadius: '4px', color: 'white', resize: 'none', minHeight: '60px' }}
+          style={{ 
+            width: '100%', 
+            minHeight: '100px', 
+            padding: '10px', 
+            backgroundColor: '#222', 
+            border: '1px solid #444', 
+            borderRadius: '4px', 
+            color: 'white', 
+            fontSize: '14px',
+            resize: 'vertical',
+            fontFamily: 'inherit'
+          }}
         />
-        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ marginTop: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
             onClick={handleSaveNotes}
-            style={{ padding: '8px 12px', backgroundColor: '#333', color: 'white', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
+            style={{ backgroundColor: '#333', color: 'white', padding: '8px 16px', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
           >
             Save Notes
           </button>
-          {noteStatus && <span style={{ color: '#999', fontSize: '12px' }}>{noteStatus}</span>}
+          {noteStatus && (
+            <span style={{ color: noteStatus.includes('saved') ? '#10b981' : '#ef4444', fontSize: '12px' }}>
+              {noteStatus}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Add to List Modal */}
+      {/* List Modal */}
       {showListModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px', padding: '20px', width: '100%', maxWidth: '350px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px', padding: '20px', minWidth: '300px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: 'white' }}>Add to List</h3>
+              <h3 style={{ color: 'white', margin: 0 }}>Add to List</h3>
               <button
                 onClick={() => setShowListModal(false)}
                 style={{ color: '#999', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}
               >
-                ×
+                x
               </button>
             </div>
             
             <div style={{ marginBottom: '15px' }}>
               <input
                 type="text"
-                placeholder="Create new list..."
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
-                style={{ width: '100%', padding: '8px', backgroundColor: '#222', border: '1px solid #444', borderRadius: '4px', color: 'white', marginBottom: '10px' }}
+                placeholder="New list name..."
+                style={{ 
+                  width: '100%', 
+                  padding: '8px', 
+                  backgroundColor: '#222', 
+                  border: '1px solid #444', 
+                  borderRadius: '4px', 
+                  color: 'white',
+                  fontSize: '14px'
+                }}
               />
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
               <button
                 onClick={handleCreateList}
                 disabled={!newListName.trim()}
-                style={{ width: '100%', backgroundColor: '#333', color: 'white', padding: '8px 16px', border: '1px solid #444', borderRadius: '4px', cursor: newListName.trim() ? 'pointer' : 'not-allowed' }}
+                style={{ 
+                  backgroundColor: newListName.trim() ? '#333' : '#555', 
+                  color: 'white', 
+                  padding: '8px 16px', 
+                  border: '1px solid #444', 
+                  borderRadius: '4px', 
+                  cursor: newListName.trim() ? 'pointer' : 'not-allowed',
+                  marginRight: '10px'
+                }}
               >
-                Create New List
+                Create List
+              </button>
+              <button
+                onClick={() => setShowListModal(false)}
+                style={{ backgroundColor: '#555', color: 'white', padding: '8px 16px', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                Cancel
               </button>
             </div>
-            
-            <div style={{ borderTop: '1px solid #333', paddingTop: '15px' }}>
-              <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>Add to existing:</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '120px', overflowY: 'auto' }}>
-                {lists.map((list) => (
+
+            {lists.length > 0 && (
+              <div>
+                <h4 style={{ color: 'white', marginBottom: '10px' }}>Existing Lists</h4>
+                {lists.map((list: CompanyList) => (
                   <button
                     key={list.id}
                     onClick={() => handleAddToList(list.id)}
-                    style={{ width: '100%', textAlign: 'left', padding: '8px', backgroundColor: '#222', color: 'white', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer' }}
+                    style={{ 
+                      display: 'block', 
+                      width: '100%', 
+                      padding: '8px', 
+                      backgroundColor: '#222', 
+                      border: '1px solid #444', 
+                      borderRadius: '4px', 
+                      color: 'white', 
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      marginBottom: '5px'
+                    }}
                   >
                     {list.name}
                   </button>
                 ))}
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
+

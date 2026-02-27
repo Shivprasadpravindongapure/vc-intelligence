@@ -1,39 +1,19 @@
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { companies, industries, stages, Company } from '@/lib/mockData';
 import { saveCompany, getSavedCompanies, SavedCompany } from '@/lib/searchManager';
 
 type SortField = 'name' | 'industry' | 'stage';
 type SortDirection = 'asc' | 'desc';
 
-type CrunchbaseOrganization = {
-  id?: string;
-  properties?: {
-    name?: string;
-    category_list?: string[];
-    funding_total?: string;
-    short_description?: string;
-    website_url?: string;
-    founded_on?: string;
-    employee_count?: number;
-    location_identifiers?: { value?: string }[];
-    founder_identifiers?: { properties?: { name?: string } }[];
-    business_model?: string;
-    target_markets?: string[];
-  };
-};
-
-type CrunchbaseResponse = {
-  data?: CrunchbaseOrganization[];
-};
-
 function CompaniesPageContent() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIndustry, setSelectedIndustry] = useState('');
-  const [selectedStage, setSelectedStage] = useState('');
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [selectedIndustry, setSelectedIndustry] = useState(searchParams.get('industry') || '');
+  const [selectedStage, setSelectedStage] = useState(searchParams.get('stage') || '');
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,82 +22,112 @@ function CompaniesPageContent() {
   const [realTimeCompanies, setRealTimeCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Sleep function for rate limiting
+  const sleep = useCallback((ms: number) => new Promise(resolve => setTimeout(resolve, ms)), []);
+
+  // Fetch real-time data from enrichment API
+  const fetchRealTimeData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Process companies one by one with delays to avoid rate limiting
+      const enrichedCompanies = [];
+      
+      for (let i = 0; i < companies.length; i++) {
+        const company = companies[i];
+        
+        try {
+          const response = await fetch('/api/enrich', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              url: company.website,
+              provider: 'google',
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Handle fallback data gracefully
+            if (data.provider === 'fallback') {
+              console.log(`Using fallback data for ${company.name}:`, data.error);
+              enrichedCompanies.push(company); // Keep original data
+            } else {
+              // Transform API data to our Company format
+              const enrichedCompany = {
+                ...company,
+                employees: data.companyDetails?.employees || company.employees,
+                founded: data.companyDetails?.founded || company.founded,
+                headquarters: data.companyDetails?.headquarters || company.headquarters,
+                founders: data.companyDetails?.founders || company.founders,
+                businessModel: data.summary || company.businessModel,
+                targetMarket: data.keywords?.find((k: string) => ['Enterprise', 'SMB', 'Consumer', 'Developer', 'Healthcare'].includes(k)) || company.targetMarket,
+                technologies: data.keywords?.filter((k: string) => ['AI', 'Machine Learning', 'Cloud', 'Blockchain', 'IoT', 'AR/VR', 'SaaS', 'API'].includes(k)) || company.technologies,
+                competitors: data.competitors || company.competitors,
+                market: data.signals?.find((s: string) => s.includes('market'))?.split(' ').pop() || company.market,
+                financials: {
+                  totalFunding: data.companyDetails?.funding || company.financials?.totalFunding,
+                  lastRound: data.companyDetails?.funding || company.financials?.lastRound,
+                  valuation: data.companyDetails?.netWorth || company.financials?.valuation,
+                  revenue: data.companyDetails?.revenue || company.financials?.revenue,
+                  burnRate: company.financials?.burnRate
+                }
+              };
+              
+              enrichedCompanies.push(enrichedCompany);
+            }
+          } else {
+            enrichedCompanies.push(company); // Return original company if API fails
+          }
+          
+          // Add delay between API calls to prevent rate limiting
+          if (i < companies.length - 1) {
+            await sleep(5000); // 5 second delay between companies
+          }
+        } catch (error) {
+          console.warn(`Failed to enrich ${company.name}:`, error);
+          enrichedCompanies.push(company); // Return original company if API fails
+        }
+      }
+      
+      setRealTimeCompanies(enrichedCompanies);
+    } catch (error) {
+      console.error('Failed to fetch real-time data:', error);
+      // Use original companies as fallback
+      setRealTimeCompanies(companies);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sleep]);
+
+  // Handle URL parameters
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (selectedIndustry) params.set('industry', selectedIndustry);
+    if (selectedStage) params.set('stage', selectedStage);
+    if (sortField !== 'name') params.set('sort', sortField);
+    if (sortDirection !== 'asc') params.set('order', sortDirection);
+    if (currentPage !== 1) params.set('page', currentPage.toString());
+    
+    const newUrl = params.toString();
+    const currentUrl = `${window.location.pathname}${newUrl ? `?${newUrl}` : ''}`;
+    
+    if (currentUrl !== window.location.search) {
+      router.replace(currentUrl, { scroll: false });
+    }
+  }, [searchQuery, selectedIndustry, selectedStage, sortField, sortDirection, currentPage, router]);
+
   // Handle hydration
   useEffect(() => {
     setMounted(true);
     setSavedCompanyIds(new Set(getSavedCompanies().map((c: SavedCompany) => c.id)));
-    // Start with mock data and then fetch real data
+    // Start with original data and then enrich with real API data
     setRealTimeCompanies(companies);
     fetchRealTimeData();
-  }, []);
-
-  // Fetch real-time data from web scraper API
-  const fetchRealTimeData = async () => {
-    setIsLoading(true);
-    try {
-      // Using a public API for real company data (you can replace with your web scraper)
-      const response = await fetch('https://api.crunchbase.com/v4/entities/organizations', {
-        headers: {
-          'X-CB-API-Key': process.env.NEXT_PUBLIC_CRUNCHBASE_API_KEY || '',
-        },
-      });
-      
-      if (response.ok) {
-        const data: CrunchbaseResponse = await response.json();
-        // Transform API data to our Company format
-        const enrichedCompanies = data.data?.slice(0, 20).map((item) => ({
-          id: item.id || `company-${Math.random()}`,
-          name: item.properties?.name || 'Unknown Company',
-          industry: item.properties?.category_list?.[0] || 'Technology',
-          stage: item.properties?.funding_total ? 'Funded' : 'Seed',
-          description: item.properties?.short_description || 'No description available',
-          website: item.properties?.website_url || '#',
-          founded: item.properties?.founded_on || 'Unknown',
-          employees: item.properties?.employee_count || 0,
-          headquarters: item.properties?.location_identifiers?.[0]?.value || 'Unknown',
-          founders: item.properties?.founder_identifiers?.map((f) => f.properties?.name).filter((name): name is string => Boolean(name)) || [],
-          businessModel: item.properties?.business_model || 'Unknown',
-          targetMarket: item.properties?.target_markets?.join(', ') || 'Unknown',
-          funding: 'Unknown',
-          valuation: 'Unknown',
-          revenue: 'Unknown',
-          growth: 'Unknown',
-          market: 'Unknown',
-          competitors: [],
-          technologies: [],
-          keyMetrics: {},
-          team: {
-            totalEmployees: item.properties?.employee_count || 0,
-            engineering: 0,
-            sales: 0,
-            marketing: 0,
-            support: 0
-          },
-          financials: {
-            totalFunding: 'Unknown',
-            lastRound: 'Unknown',
-            valuation: 'Unknown',
-            revenue: 'Unknown',
-            burnRate: 'Unknown'
-          }
-        })) || companies;
-        
-        setRealTimeCompanies(enrichedCompanies);
-      }
-    } catch {
-      console.log('Using mock data due to API limitations');
-      // Fallback to mock data with some variations
-      const enrichedMockData = companies.map((company) => ({
-        ...company,
-        employees: Math.floor(Math.random() * 10000) + 100,
-        founded: (2000 + Math.floor(Math.random() * 24)).toString(),
-        headquarters: ['San Francisco', 'New York', 'London', 'Berlin', 'Tokyo'][Math.floor(Math.random() * 5)]
-      }));
-      setRealTimeCompanies(enrichedMockData);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [fetchRealTimeData]);
 
   // Handle enrichment
   const handleEnrichment = (company: Company) => {
@@ -250,24 +260,13 @@ function CompaniesPageContent() {
           >
             Clear Filters
           </button>
-          
-          <button
-            onClick={fetchRealTimeData}
-            disabled={isLoading}
-            style={{ padding: '8px 16px', backgroundColor: '#333', color: 'white', border: '1px solid #444', borderRadius: '4px', cursor: isLoading ? 'not-allowed' : 'pointer' }}
-          >
-            {isLoading ? 'Loading...' : 'Refresh Data'}
-          </button>
         </div>
       </div>
 
-      {/* Results Count */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ color: '#999', fontSize: '14px' }}>
-          Showing <span style={{ color: 'white', fontWeight: 'bold' }}>{paginatedCompanies.length}</span> of{' '}
-          <span style={{ color: 'white', fontWeight: 'bold' }}>{filteredAndSortedCompanies.length}</span> companies
-          {isLoading && <span style={{ marginLeft: '10px', color: '#4a9eff' }}>Fetching real-time data...</span>}
-        </div>
+      <div style={{ color: '#999', fontSize: '14px', marginBottom: '20px' }}>
+        Showing <span style={{ color: 'white', fontWeight: 'bold' }}>{paginatedCompanies.length}</span> of{' '}
+        <span style={{ color: 'white', fontWeight: 'bold' }}>{filteredAndSortedCompanies.length}</span> companies
+        {isLoading && <span style={{ marginLeft: '10px', color: '#4a9eff' }}>Loading real-time data...</span>}
       </div>
 
       {/* Companies Table */}
@@ -336,7 +335,7 @@ function CompaniesPageContent() {
                       </button>
                       <button
                         onClick={() => handleEnrichment(company)}
-                        style={{ padding: '4px 8px', backgroundColor: '#333', color: 'white', border: '1px solid #444', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
+                        style={{ padding: '4px 8px', backgroundColor: '#4a9eff', color: 'white', border: '1px solid #444', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}
                       >
                         Enrich
                       </button>
